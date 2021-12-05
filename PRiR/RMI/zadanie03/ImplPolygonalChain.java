@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.concurrent.SynchronousQueue;
 
-public class SerwisMoj extends UnicastRemoteObject implements PolygonalChain {
+public class ImplPolygonalChain extends UnicastRemoteObject implements PolygonalChain {
     private String polygonalChainProcessorUri;
     private HashMap<String, ArrayList<LineSegment>> receivedLineSegments;
     private HashMap<String, ArrayList<LineSegment>> orderedLineSegments;
@@ -14,7 +14,7 @@ public class SerwisMoj extends UnicastRemoteObject implements PolygonalChain {
     private ArrayList<String> readyPolygonalChainsNames;
     private HashMap<String, Integer> processedPolygonalChains;
 
-    protected SerwisMoj() throws RemoteException {
+    protected ImplPolygonalChain() throws RemoteException {
         super();
         receivedLineSegments = new HashMap<String, ArrayList<LineSegment>>();
         orderedLineSegments = new HashMap<String, ArrayList<LineSegment>>();
@@ -78,7 +78,6 @@ public class SerwisMoj extends UnicastRemoteObject implements PolygonalChain {
         polygonalChains.get(name).add(lastPoint);
         orderedLineSegments.get(name).add(new LineSegment(new Position2D(-50000, -50000), firstPoint));
         orderedLineSegments.get(name).add(new LineSegment(lastPoint, new Position2D(50000, 50000)));
-        System.out.println("Komunikat ze srodka metody newPolygonalChain : polygonalChain = " + polygonalChains.get(name));
     }
 
     @Override
@@ -94,20 +93,14 @@ public class SerwisMoj extends UnicastRemoteObject implements PolygonalChain {
             search = false;
             for (int i = 0; i < receivedLineSegments.get(name).size(); i++) {
                 for (int j = 0; j < orderedLineSegments.get(name).size(); j++) {
-                    // jesli pierwszy punkt otrzymanego odcinka jest rowny ostatniemu punktowi odcinka z uporzadkowanej kolekcji
                     if (receivedLineSegments.get(name).get(i).firstPoint.equals(orderedLineSegments.get(name).get(j).lastPoint) &&
                         !orderedLineSegments.get(name).contains(receivedLineSegments.get(name).get(i))) {
-                        // to dodaj otrzymany odcinek do uporzadzkowanej kolekcji, w miejscu tuz po tym odcinku z powyzszego warunku
                         orderedLineSegments.get(name).add(j + 1, receivedLineSegments.get(name).get(i));
                         polygonalChains.get(name).add(j + 1, receivedLineSegments.get(name).get(i).lastPoint);
-                        // jesli dodano nowy punkt to moze bedzie mozna wstawic jeszcze kolejne - szukaj jeszcze raz od poczatku
                         search = true;
                     }
-                    // jesli drugi punkt odcinka jest rowny punktowi w kolekcji uporzadkowanych punktow obecnie przetwarzanej linii lamanej
-                    // i jednoczesnie pierwszego punktu odcinka nie ma w kolekcji
                     if (receivedLineSegments.get(name).get(i).lastPoint.equals(orderedLineSegments.get(name).get(j).firstPoint) &&
                         !orderedLineSegments.get(name).contains(receivedLineSegments.get(name).get(i))) {
-                        // to dodaj pierwszy punkt odcinka do tej kolekcji, w miejscu tuz przed tym punkcie z powyzszego warunku
                         orderedLineSegments.get(name).add(j, receivedLineSegments.get(name).get(i));
                         polygonalChains.get(name).add(j, receivedLineSegments.get(name).get(i).firstPoint);
                         search = true;
@@ -127,14 +120,12 @@ public class SerwisMoj extends UnicastRemoteObject implements PolygonalChain {
     }
 
     private void checkIfOrderedLineSegmentsReady(String name) {
-        // odcinkow bedzie o jeden mniej niz punktow dla linii lamanej i dany polygonalChain nie zostal jeszcze wstawiony do kolejki
         if (!readyPolygonalChainsNames.contains(name) && checkIfReady(name)) {
             try {
                 readyPolygonalChainsNames.add(name);
                 LinkedHashSet<Position2D> set = new LinkedHashSet<Position2D>(polygonalChains.get(name));
                 polygonalChains.get(name).clear();
                 polygonalChains.get(name).addAll(set);
-                System.out.println("Krzywa " + name + " zostala zlozozona: " + polygonalChains.get(name).toString());
                 queue.put(new PolygonalChainWithName(name, new ArrayList<Position2D>(polygonalChains.get(name))));
             } catch (InterruptedException e) {
                 e.printStackTrace();
