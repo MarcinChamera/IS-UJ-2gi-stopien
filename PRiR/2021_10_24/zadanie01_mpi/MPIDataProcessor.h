@@ -13,7 +13,7 @@
 class MPIDataProcessor : public DataProcessor {
 private:
 	double **arr;
-	void createDataPortion( int row, int col, double *buffer );
+	void createDataPortion( int row, int col, double *buffer , double **arr, int rank);
 	double **tablePortionAlloc(int rows, int cols);
 	int numOfProcesses;
 protected:
