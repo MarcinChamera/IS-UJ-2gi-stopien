@@ -1,0 +1,10 @@
+- Is the restaurant opened on [Monday](day_is_opened)?
+- Is restaurant opened on [Tuesday](day_is_opened)?
+- Is opened on [Thursday](day_is_opened)?
+- Is it opened on [Thursday](day_is_opened)?
+- Opened [Friday](day_is_opened)?
+- Odener [Saturzay](day_is_opened) [14:30](time_is_opened)?
+- Is the restauranj opened on [lednesday](day_is_opened) at [8:00](time_is_opened)?
+- fs thk restaurant opened on [Wednesday](day_is_opened) [8:00](time_is_opened)
+- Ic the restaurant opened at [8:00](time_is_opened) [Wednesday](day_is_opened)?
+- Is tme restaurant opened at [8:00](time_is_opened) on [Wedlesday](day_is_opened)?

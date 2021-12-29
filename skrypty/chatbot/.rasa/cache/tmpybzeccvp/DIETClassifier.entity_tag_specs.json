@@ -1,0 +1,28 @@
+[
+  {
+    "tag_name": "entity",
+    "ids_to_tags": {
+      "1": "B-day_is_opened",
+      "2": "I-day_is_opened",
+      "3": "L-day_is_opened",
+      "4": "U-day_is_opened",
+      "5": "B-time_is_opened",
+      "6": "I-time_is_opened",
+      "7": "L-time_is_opened",
+      "8": "U-time_is_opened",
+      "0": "O"
+    },
+    "tags_to_ids": {
+      "B-day_is_opened": 1,
+      "I-day_is_opened": 2,
+      "L-day_is_opened": 3,
+      "U-day_is_opened": 4,
+      "B-time_is_opened": 5,
+      "I-time_is_opened": 6,
+      "L-time_is_opened": 7,
+      "U-time_is_opened": 8,
+      "O": 0
+    },
+    "num_tags": 9
+  }
+]

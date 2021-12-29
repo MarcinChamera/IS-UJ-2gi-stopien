@@ -1,0 +1,78 @@
+version: "3.0"
+
+intents:
+  - opening_hours
+  - menu_items
+  - greet
+  - goodbye
+  - affirm
+  - deny
+  # - request_order
+  - place_order
+
+entities:
+  - day_is_opened
+  - time_is_opened
+  - menu_item_order
+  - count
+  - comment
+  # - end_order_form
+
+slots:
+  menu_item_order:
+    type: list
+    mappings:
+    - type: custom
+      action: action_place_order
+      # entity: menu_item_order
+  count:
+    type: list
+    mappings:
+    - type: custom
+      action: action_place_order
+      # entity: count
+  comment:
+    type: list
+    mappings:
+    - type: custom
+      action: action_place_order
+      # entity: exclude_ingridient
+#   end_order_form:
+#     type: text
+#     mappings:
+#     - type: from_entity
+#       entity: end_order_form
+
+responses:
+  # utter_ask_menu_item_order:
+  #   - text: What item from the menu you want to add to your order?
+
+  # utter_ask_count:
+  #   - text: How much do you want?
+
+  # utter_ask_exclude_ingridient:
+  #   - text: Do you want to exclude an ingridient from this item? If no, leave blank.
+
+  # utter_end_order_form:
+  #   - text: Do you want to order more?
+
+  # utter_submit_order:
+  #   - text: "I got your order!"
+
+  utter_greet:
+  - text: "Welcome to Chwile Przyjemnosci Restaurant! What can I do for you?"
+
+  utter_did_that_help:
+  - text: "Did that help you?"
+
+  utter_happy:
+  - text: "Great, carry on!"
+
+  utter_goodbye:
+  - text: "Bye"
+
+actions:
+  - action_opening_hours
+  - action_menu_items
+  - action_place_order
+  - action_show_order

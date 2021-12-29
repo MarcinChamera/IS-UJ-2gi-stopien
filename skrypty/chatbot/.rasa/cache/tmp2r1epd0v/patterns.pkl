@@ -1,0 +1,6 @@
+[
+  {
+    "name": "day_is_opened",
+    "pattern": "(\\bmonday\\b|\\btuesday\\b|\\bwednesday\\b|\\bthursday\\b|\\bfriday\\b|\\bsaturday\\b|\\bsunday\\b)"
+  }
+]
