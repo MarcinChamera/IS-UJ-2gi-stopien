@@ -104,19 +104,19 @@ int LifeParallelImplementation::maxSumOfNeighboursAge() {
 //zrownoleglic - rozwiazanie jest dobre, test przechodzi dla wszystkich napisanych tu metod
 //jedynie metoda numberOfNeighboursStatistics jest wolniejsza w wersji rownoleglej (218s vs 414s)
 //efektywnosc programu 13.19% (minimum to 80)
-int* LifeParallelImplementation::numberOfNeighboursStatistics() {
-	int *tbl = new int[9]; // od 0 do 8 sąsiadów włącznie
-	for (int i = 0; i < 9; i++)
-		tbl[i] = 0;
-	#pragma omp parallel for collapse(2)
-	for (int row = 1; row < size - 1; row++)
-		for (int col = 1; col < size - 1; col++) {
-			#pragma omp critical
-			tbl[liveNeighbours(row, col)]++;
-		}
+// int* LifeParallelImplementation::numberOfNeighboursStatistics() {
+// 	int *tbl = new int[9]; // od 0 do 8 sąsiadów włącznie
+// 	for (int i = 0; i < 9; i++)
+// 		tbl[i] = 0;
+// 	#pragma omp parallel for collapse(2)
+// 	for (int row = 1; row < size - 1; row++)
+// 		for (int col = 1; col < size - 1; col++) {
+// 			#pragma omp critical
+// 			tbl[liveNeighbours(row, col)]++;
+// 		}
 
-	return tbl;
-}
+// 	return tbl;
+// }
 
 //efektywnosc programu po uzyciu reduction zamiast critical: 57.97
 //pomysł - nie uzywac critical w metodzie maxSumOfNeighboursAge
