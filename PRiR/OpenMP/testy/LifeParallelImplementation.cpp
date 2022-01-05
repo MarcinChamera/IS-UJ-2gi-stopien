@@ -58,6 +58,51 @@ LifeParallelImplementation::LifeParallelImplementation() {
 // }
 
 //wersja 2
+// void LifeParallelImplementation::oneStep() {
+// 	// #pragma omp parallel shared(cells, age, nextGeneration)
+// 	#pragma omp parallel
+// 	{
+// 		int neighbours;
+// 		double rnd;
+// 		struct drand48_data *drandBuffer = new struct drand48_data();
+// 		srand48_r(omp_get_thread_num(), drandBuffer);
+// 		#pragma omp for
+// 		for (int row = 0; row < size; row++) {
+// 			for (int col = 0; col < size; col++) {
+// 				neighbours = liveNeighbours(row, col);
+// 				if (cells[row][col]) {
+// 					// komorka zyje
+// 					drand48_r(drandBuffer, &rnd);
+// 					if (rules->cellDies(neighbours, age[row][col], rnd)) {
+// 						// smierc komorki
+// 						nextGeneration[row][col] = 0;
+// 						age[row][col] = 0;
+// 					} else {
+// 						// komorka zyje nadal, jej wiek rosnie
+// 						nextGeneration[row][col] = 1;
+// 						age[row][col]++;
+// 					}
+// 				} else {
+// 					// komorka nie zyje
+// 					drand48_r(drandBuffer, &rnd);
+// 					if (rules->cellBecomesLive(neighbours,
+// 							neighboursAgeSum(row, col), rnd)) {
+// 						// narodziny
+// 						nextGeneration[row][col] = 1;
+// 						age[row][col] = 0;
+// 					} else {
+// 						nextGeneration[row][col] = 0;
+// 					}
+// 				}
+// 			}
+// 		}
+// 	} 
+// 	int **tmp = cells;
+// 	cells = nextGeneration;
+// 	nextGeneration = tmp;
+// }
+
+// wersja 3
 void LifeParallelImplementation::oneStep() {
 	// #pragma omp parallel shared(cells, age, nextGeneration)
 	#pragma omp parallel
@@ -66,7 +111,7 @@ void LifeParallelImplementation::oneStep() {
 		double rnd;
 		struct drand48_data *drandBuffer = new struct drand48_data();
 		srand48_r(omp_get_thread_num(), drandBuffer);
-		#pragma omp for
+		#pragma omp for schedule(static, 1)
 		for (int row = 0; row < size; row++) {
 			for (int col = 0; col < size; col++) {
 				neighbours = liveNeighbours(row, col);
