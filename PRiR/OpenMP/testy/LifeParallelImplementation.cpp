@@ -11,7 +11,53 @@
 LifeParallelImplementation::LifeParallelImplementation() {
 }
 
-// do zrownoleglenia - wychodzi na to, że tu jest w porządku już
+// wersja 1
+// do zrownoleglenia
+// void LifeParallelImplementation::oneStep() {
+// 	// #pragma omp parallel shared(cells, age, nextGeneration)
+// 	#pragma omp parallel
+// 	{
+// 		int neighbours;
+// 		double rnd;
+// 		struct drand48_data *drandBuffer = new struct drand48_data();
+// 		srand48_r(omp_get_thread_num(), drandBuffer);
+// 		#pragma omp for collapse(2)
+// 		for (int row = 0; row < size; row++) {
+// 			for (int col = 0; col < size; col++) {
+// 				neighbours = liveNeighbours(row, col);
+// 				if (cells[row][col]) {
+// 					// komorka zyje
+// 					drand48_r(drandBuffer, &rnd);
+// 					if (rules->cellDies(neighbours, age[row][col], rnd)) {
+// 						// smierc komorki
+// 						nextGeneration[row][col] = 0;
+// 						age[row][col] = 0;
+// 					} else {
+// 						// komorka zyje nadal, jej wiek rosnie
+// 						nextGeneration[row][col] = 1;
+// 						age[row][col]++;
+// 					}
+// 				} else {
+// 					// komorka nie zyje
+// 					drand48_r(drandBuffer, &rnd);
+// 					if (rules->cellBecomesLive(neighbours,
+// 							neighboursAgeSum(row, col), rnd)) {
+// 						// narodziny
+// 						nextGeneration[row][col] = 1;
+// 						age[row][col] = 0;
+// 					} else {
+// 						nextGeneration[row][col] = 0;
+// 					}
+// 				}
+// 			}
+// 		}
+// 	} 
+// 	int **tmp = cells;
+// 	cells = nextGeneration;
+// 	nextGeneration = tmp;
+// }
+
+//wersja 2
 void LifeParallelImplementation::oneStep() {
 	// #pragma omp parallel shared(cells, age, nextGeneration)
 	#pragma omp parallel
@@ -20,7 +66,7 @@ void LifeParallelImplementation::oneStep() {
 		double rnd;
 		struct drand48_data *drandBuffer = new struct drand48_data();
 		srand48_r(omp_get_thread_num(), drandBuffer);
-		#pragma omp for collapse(2)
+		#pragma omp for
 		for (int row = 0; row < size; row++) {
 			for (int col = 0; col < size; col++) {
 				neighbours = liveNeighbours(row, col);
@@ -101,6 +147,7 @@ int LifeParallelImplementation::maxSumOfNeighboursAge() {
 	return max_value;
 }
 
+//wersja 1
 //zrownoleglic - rozwiazanie jest dobre, test przechodzi dla wszystkich napisanych tu metod
 //jedynie metoda numberOfNeighboursStatistics jest wolniejsza w wersji rownoleglej (218s vs 414s)
 //efektywnosc programu 13.19% (minimum to 80)
@@ -118,6 +165,7 @@ int LifeParallelImplementation::maxSumOfNeighboursAge() {
 // 	return tbl;
 // }
 
+//wersja 2
 //efektywnosc programu po uzyciu reduction zamiast critical: 57.97
 //pomysł - nie uzywac critical w metodzie maxSumOfNeighboursAge
 // int* LifeParallelImplementation::numberOfNeighboursStatistics() {
@@ -134,6 +182,7 @@ int LifeParallelImplementation::maxSumOfNeighboursAge() {
 // 	return tbl;
 // }
 
+//wersja 3
 int* LifeParallelImplementation::numberOfNeighboursStatistics() {
 	int *tbl = new int[9]; // od 0 do 8 sąsiadów włącznie
 	for (int i = 0; i < 9; i++)
