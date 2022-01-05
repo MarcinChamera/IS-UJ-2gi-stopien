@@ -120,11 +120,25 @@ int LifeParallelImplementation::maxSumOfNeighboursAge() {
 
 //efektywnosc programu po uzyciu reduction zamiast critical: 57.97
 //pomysł - nie uzywac critical w metodzie maxSumOfNeighboursAge
+// int* LifeParallelImplementation::numberOfNeighboursStatistics() {
+// 	int *tbl = new int[9]; // od 0 do 8 sąsiadów włącznie
+// 	for (int i = 0; i < 9; i++)
+// 		tbl[i] = 0;
+// 	#pragma omp parallel for collapse(2) reduction(+ : tbl[:9])
+// 	for (int row = 1; row < size - 1; row++)
+// 		for (int col = 1; col < size - 1; col++) {
+// 			// #pragma omp critical
+// 			tbl[liveNeighbours(row, col)]++;
+// 		}
+
+// 	return tbl;
+// }
+
 int* LifeParallelImplementation::numberOfNeighboursStatistics() {
 	int *tbl = new int[9]; // od 0 do 8 sąsiadów włącznie
 	for (int i = 0; i < 9; i++)
 		tbl[i] = 0;
-	#pragma omp parallel for collapse(2) reduction(+ : tbl[:9])
+	#pragma omp parallel for reduction(+ : tbl[:9])
 	for (int row = 1; row < size - 1; row++)
 		for (int col = 1; col < size - 1; col++) {
 			// #pragma omp critical
