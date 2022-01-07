@@ -8,8 +8,16 @@
 #include "LifeParallelImplementation.h"
 #include <stdlib.h>
 
+struct drand48_data *drandBuffer;
+#pragma omp threadprivate(drandBuffer)
+
 LifeParallelImplementation::LifeParallelImplementation() {
-	
+
+	drandBuffer = new struct drand48_data();
+	// #pragma omp parallel
+	// {
+	srand48_r(omp_get_thread_num() * 100, drandBuffer);
+	// }
 }
 
 // wersja 1
@@ -149,14 +157,55 @@ LifeParallelImplementation::LifeParallelImplementation() {
 // }
 
 //wersja 4
+// void LifeParallelImplementation::oneStep() {
+// 	omp_set_nested(true);
+// 	#pragma omp parallel
+// 	{
+// 		int neighbours;
+// 		double rnd;
+// 		drandBuffer = new struct drand48_data();
+// 		srand48_r(omp_get_thread_num(), drandBuffer);
+// 		#pragma omp for
+// 		for (int row = 0; row < size; row++) {
+// 			for (int col = 0; col < size; col++) {
+// 				neighbours = liveNeighbours(row, col);
+// 				drand48_r(drandBuffer, &rnd);
+// 				if (cells[row][col]) {
+// 					// komorka zyje
+// 					if (rules->cellDies(neighbours, age[row][col], rnd)) {
+// 						// smierc komorki
+// 						nextGeneration[row][col] = 0;
+// 						age[row][col] = 0;
+// 					} else {
+// 						// komorka zyje nadal, jej wiek rosnie
+// 						nextGeneration[row][col] = 1;
+// 						age[row][col]++;
+// 					}
+// 				} else {
+// 					// komorka nie zyje
+// 					if (rules->cellBecomesLive(neighbours,
+// 							neighboursAgeSum(row, col), rnd)) {
+// 						// narodziny
+// 						nextGeneration[row][col] = 1;
+// 						age[row][col] = 0;
+// 					} else {
+// 						nextGeneration[row][col] = 0;
+// 					}
+// 				}
+// 			}
+// 		}
+// 	} 
+// 	int **tmp = cells;
+// 	cells = nextGeneration;
+// 	nextGeneration = tmp;
+// }
+
+//wersja 5
 void LifeParallelImplementation::oneStep() {
-	// #pragma omp parallel shared(cells, age, nextGeneration)
 	#pragma omp parallel
 	{
 		int neighbours;
 		double rnd;
-		struct drand48_data *drandBuffer = new struct drand48_data();
-		srand48_r(omp_get_thread_num(), drandBuffer);
 		#pragma omp for collapse(2)
 		for (int row = 0; row < size; row++) {
 			for (int col = 0; col < size; col++) {
@@ -280,7 +329,6 @@ int* LifeParallelImplementation::numberOfNeighboursStatistics() {
 	#pragma omp parallel for reduction(+ : tbl[:9])
 	for (int row = 1; row < size - 1; row++)
 		for (int col = 1; col < size - 1; col++) {
-			// #pragma omp critical
 			tbl[liveNeighbours(row, col)]++;
 		}
 
