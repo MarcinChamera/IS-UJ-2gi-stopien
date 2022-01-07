@@ -286,7 +286,7 @@ double LifeParallelImplementation::avgNumerOfLiveNeighboursOfLiveCell() {
 // 	return max_value;
 // }
 
-// int LifeParallelImplementation::maxSumOfNeighboursAge() {
+int LifeParallelImplementation::maxSumOfNeighboursAge() {
 	int max_value = 0;
 	// sumOfNeighboursAge jest domyslnie uznawana za shared
 	#pragma omp parallel
