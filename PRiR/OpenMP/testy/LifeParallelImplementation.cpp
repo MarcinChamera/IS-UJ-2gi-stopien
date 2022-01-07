@@ -246,7 +246,7 @@ double LifeParallelImplementation::avgNumerOfLiveNeighboursOfLiveCell() {
 	int sumOfNeighbours = 0;
 	int counter = 0;
 	// sumOfNeighbours i counter są domyślnie uznawane za shared
-	#pragma omp parallel for reduction(+ : sumOfNeighbours, counter)
+	#pragma omp parallel for reduction(+ : sumOfNeighbours, counter) schedule(dynamic)
 		for (int row = 1; row < size - 1; row++)
 			for (int col = 1; col < size - 1; col++) {
 				if (cells[row][col]) {
