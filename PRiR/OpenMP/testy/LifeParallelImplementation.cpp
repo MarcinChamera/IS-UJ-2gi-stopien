@@ -287,30 +287,30 @@ double LifeParallelImplementation::avgNumerOfLiveNeighboursOfLiveCell() {
 // }
 
 // int LifeParallelImplementation::maxSumOfNeighboursAge() {
-// 	int max_value = 0;
-// 	// sumOfNeighboursAge jest domyslnie uznawana za shared
-// 	#pragma omp parallel
-// 	{
-// 		int sumOfNeighboursAge;
-// 		int max_thread_value = 0;
-// 		#pragma omp for nowait
-// 		for (int row = 1; row < size - 1; row++) {
-// 			for (int col = 1; col < size - 1; col++) {
-// 				sumOfNeighboursAge = neighboursAgeSum(row, col);
-// 				if (max_thread_value < sumOfNeighboursAge)
-// 					max_thread_value = sumOfNeighboursAge;
-// 			}
-// 		}
+	int max_value = 0;
+	// sumOfNeighboursAge jest domyslnie uznawana za shared
+	#pragma omp parallel
+	{
+		int sumOfNeighboursAge;
+		int max_thread_value = 0;
+		#pragma omp for nowait
+		for (int row = 1; row < size - 1; row++) {
+			for (int col = 1; col < size - 1; col++) {
+				sumOfNeighboursAge = neighboursAgeSum(row, col);
+				if (max_thread_value < sumOfNeighboursAge)
+					max_thread_value = sumOfNeighboursAge;
+			}
+		}
 
-// 		#pragma omp critical
-// 		{
-// 		if (max_thread_value > max_value) {
-// 			max_value = max_thread_value;
-// 		}
-// 		}
-// 	}
-// 	return max_value;
-// }
+		#pragma omp critical
+		{
+		if (max_thread_value > max_value) {
+			max_value = max_thread_value;
+		}
+		}
+	}
+	return max_value;
+}
 
 // int LifeParallelImplementation::maxSumOfNeighboursAge() {
 // 	int max_value = 0;
@@ -339,31 +339,24 @@ double LifeParallelImplementation::avgNumerOfLiveNeighboursOfLiveCell() {
 // 	return max_value;
 // }
 
-int LifeParallelImplementation::maxSumOfNeighboursAge() {
-	int max_value = 0;
-	// sumOfNeighboursAge jest domyslnie uznawana za shared
-	#pragma omp parallel
-	{
-		int sumOfNeighboursAge;
-		// int max_thread_value = 0;
-		#pragma omp for reduction(max : max_value)
-		for (int row = 1; row < size - 1; row++) {
-			for (int col = 1; col < size - 1; col++) {
-				sumOfNeighboursAge = neighboursAgeSum(row, col);
-				if (max_value < sumOfNeighboursAge)
-					max_value = sumOfNeighboursAge;
-			}
-		}
-
-		// #pragma omp critical
-		// {
-		// if (max_thread_value > max_value) {
-		// 	max_value = max_thread_value;
-		// }
-		// }
-	}
-	return max_value;
-}
+// int LifeParallelImplementation::maxSumOfNeighboursAge() {
+// 	int max_value = 0;
+// 	// sumOfNeighboursAge jest domyslnie uznawana za shared
+// 	#pragma omp parallel
+// 	{
+// 		int sumOfNeighboursAge;
+// 		// int max_thread_value = 0;
+// 		#pragma omp for reduction(max : max_value)
+// 		for (int row = 1; row < size - 1; row++) {
+// 			for (int col = 1; col < size - 1; col++) {
+// 				sumOfNeighboursAge = neighboursAgeSum(row, col);
+// 				if (max_value < sumOfNeighboursAge)
+// 					max_value = sumOfNeighboursAge;
+// 			}
+// 		}
+// 	}
+// 	return max_value;
+// }
 
 //wersja 1
 //zrownoleglic - rozwiazanie jest dobre, test przechodzi dla wszystkich napisanych tu metod
