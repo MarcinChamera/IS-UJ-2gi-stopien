@@ -8,15 +8,15 @@
 #include "LifeParallelImplementation.h"
 #include <stdlib.h>
 
-struct drand48_data *drandBuffer;
+struct drand48_data drandBuffer;
 #pragma omp threadprivate(drandBuffer)
 
 LifeParallelImplementation::LifeParallelImplementation() {
 
-	drandBuffer = new struct drand48_data();
+	// drandBuffer = new struct drand48_data();
 	// #pragma omp parallel
 	// {
-	srand48_r(omp_get_thread_num() * 100, drandBuffer);
+	srand48_r(omp_get_thread_num(), &drandBuffer);
 	// }
 }
 
@@ -206,11 +206,11 @@ void LifeParallelImplementation::oneStep() {
 	{
 		int neighbours;
 		double rnd;
-		#pragma omp for collapse(2)
+		#pragma omp for
 		for (int row = 0; row < size; row++) {
 			for (int col = 0; col < size; col++) {
 				neighbours = liveNeighbours(row, col);
-				drand48_r(drandBuffer, &rnd);
+				drand48_r(&drandBuffer, &rnd);
 				if (cells[row][col]) {
 					// komorka zyje
 					if (rules->cellDies(neighbours, age[row][col], rnd)) {
@@ -246,7 +246,7 @@ double LifeParallelImplementation::avgNumerOfLiveNeighboursOfLiveCell() {
 	int sumOfNeighbours = 0;
 	int counter = 0;
 	// sumOfNeighbours i counter są domyślnie uznawane za shared
-	#pragma omp parallel for collapse(2) reduction(+ : sumOfNeighbours, counter)
+	#pragma omp parallel for reduction(+ : sumOfNeighbours, counter)
 		for (int row = 1; row < size - 1; row++)
 			for (int col = 1; col < size - 1; col++) {
 				if (cells[row][col]) {
@@ -260,28 +260,107 @@ double LifeParallelImplementation::avgNumerOfLiveNeighboursOfLiveCell() {
 }
 
 //do zrownoleglenia - poprawnie, dobry wynik
+// int LifeParallelImplementation::maxSumOfNeighboursAge() {
+// 	int sumOfNeighboursAge;
+// 	int max_value = 0;
+// 	// sumOfNeighboursAge jest domyslnie uznawana za shared
+// 	#pragma omp parallel
+// 	{
+// 		int max_thread_value = 0;
+// 		#pragma omp for collapse(2)
+// 		for (int row = 1; row < size - 1; row++) {
+// 			for (int col = 1; col < size - 1; col++) {
+// 				sumOfNeighboursAge = neighboursAgeSum(row, col);
+// 				if (max_thread_value < sumOfNeighboursAge)
+// 					max_thread_value = sumOfNeighboursAge;
+// 			}
+// 		}
+
+// 		#pragma omp critical
+// 		{
+// 			if (max_thread_value > max_value) {
+// 				max_value = max_thread_value;
+// 			}
+// 		}
+// 	}
+// 	return max_value;
+// }
+
+// int LifeParallelImplementation::maxSumOfNeighboursAge() {
+// 	int max_value = 0;
+// 	// sumOfNeighboursAge jest domyslnie uznawana za shared
+// 	#pragma omp parallel
+// 	{
+// 		int sumOfNeighboursAge;
+// 		int max_thread_value = 0;
+// 		#pragma omp for nowait
+// 		for (int row = 1; row < size - 1; row++) {
+// 			for (int col = 1; col < size - 1; col++) {
+// 				sumOfNeighboursAge = neighboursAgeSum(row, col);
+// 				if (max_thread_value < sumOfNeighboursAge)
+// 					max_thread_value = sumOfNeighboursAge;
+// 			}
+// 		}
+
+// 		#pragma omp critical
+// 		{
+// 		if (max_thread_value > max_value) {
+// 			max_value = max_thread_value;
+// 		}
+// 		}
+// 	}
+// 	return max_value;
+// }
+
+// int LifeParallelImplementation::maxSumOfNeighboursAge() {
+// 	int max_value = 0;
+// 	// sumOfNeighboursAge jest domyslnie uznawana za shared
+// 	#pragma omp parallel
+// 	{
+// 		int sumOfNeighboursAge;
+// 		int max_thread_value = 0;
+// 		#pragma omp for nowait
+// 		for (int row = 1; row < size - 1; row++) {
+// 			for (int col = 1; col < size - 1; col++) {
+// 				sumOfNeighboursAge = neighboursAgeSum(row, col);
+// 				if (max_thread_value < sumOfNeighboursAge) {
+// 					max_thread_value = sumOfNeighboursAge;
+					
+// 					if (max_thread_value > max_value) {
+// 						#pragma omp critical
+// 						{
+// 							max_value = max_thread_value;
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}		
+// 	}
+// 	return max_value;
+// }
+
 int LifeParallelImplementation::maxSumOfNeighboursAge() {
-	int sumOfNeighboursAge;
 	int max_value = 0;
 	// sumOfNeighboursAge jest domyslnie uznawana za shared
 	#pragma omp parallel
 	{
-		int max_thread_value = 0;
-		#pragma omp for collapse(2)
+		int sumOfNeighboursAge;
+		// int max_thread_value = 0;
+		#pragma omp for reduction(max : max_value)
 		for (int row = 1; row < size - 1; row++) {
 			for (int col = 1; col < size - 1; col++) {
 				sumOfNeighboursAge = neighboursAgeSum(row, col);
-				if (max_thread_value < sumOfNeighboursAge)
-					max_thread_value = sumOfNeighboursAge;
+				if (max_value < sumOfNeighboursAge)
+					max_value = sumOfNeighboursAge;
 			}
 		}
 
-		#pragma omp critical
-		{
-			if (max_thread_value > max_value) {
-				max_value = max_thread_value;
-			}
-		}
+		// #pragma omp critical
+		// {
+		// if (max_thread_value > max_value) {
+		// 	max_value = max_thread_value;
+		// }
+		// }
 	}
 	return max_value;
 }
