@@ -346,7 +346,7 @@ int LifeParallelImplementation::maxSumOfNeighboursAge() {
 	{
 		int sumOfNeighboursAge;
 		// int max_thread_value = 0;
-		#pragma omp for collapse(2) schedule(dynamic) reduction(max : max_value)
+		#pragma omp for schedule(dynamic) reduction(max : max_value)
 		for (int row = 1; row < size - 1; row++) {
 			for (int col = 1; col < size - 1; col++) {
 				sumOfNeighboursAge = neighboursAgeSum(row, col);
@@ -398,7 +398,7 @@ int* LifeParallelImplementation::numberOfNeighboursStatistics() {
 	int *tbl = new int[9]; // od 0 do 8 sąsiadów włącznie
 	for (int i = 0; i < 9; i++)
 		tbl[i] = 0;
-	#pragma omp parallel for schedule(static) reduction(+ : tbl[:9])
+	#pragma omp parallel for schedule(dynamic, 9) reduction(+ : tbl[:9])
 	for (int row = 1; row < size - 1; row++)
 		for (int col = 1; col < size - 1; col++) {
 			tbl[liveNeighbours(row, col)]++;
