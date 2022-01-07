@@ -206,7 +206,7 @@ void LifeParallelImplementation::oneStep() {
 	{
 		int neighbours;
 		double rnd;
-		#pragma omp for schedule(dynamic)
+		#pragma omp for schedule(guided)
 		for (int row = 0; row < size; row++) {
 			for (int col = 0; col < size; col++) {
 				neighbours = liveNeighbours(row, col);
@@ -246,7 +246,7 @@ double LifeParallelImplementation::avgNumerOfLiveNeighboursOfLiveCell() {
 	int sumOfNeighbours = 0;
 	int counter = 0;
 	// sumOfNeighbours i counter są domyślnie uznawane za shared
-	#pragma omp parallel for reduction(+ : sumOfNeighbours, counter) schedule(dynamic)
+	#pragma omp parallel for reduction(+ : sumOfNeighbours, counter) schedule(guided)
 		for (int row = 1; row < size - 1; row++)
 			for (int col = 1; col < size - 1; col++) {
 				if (cells[row][col]) {
@@ -346,7 +346,7 @@ int LifeParallelImplementation::maxSumOfNeighboursAge() {
 	{
 		int sumOfNeighboursAge;
 		// int max_thread_value = 0;
-		#pragma omp for schedule(dynamic) reduction(max : max_value)
+		#pragma omp for schedule(guided) reduction(max : max_value)
 		for (int row = 1; row < size - 1; row++) {
 			for (int col = 1; col < size - 1; col++) {
 				sumOfNeighboursAge = neighboursAgeSum(row, col);
@@ -398,7 +398,7 @@ int* LifeParallelImplementation::numberOfNeighboursStatistics() {
 	int *tbl = new int[9]; // od 0 do 8 sąsiadów włącznie
 	for (int i = 0; i < 9; i++)
 		tbl[i] = 0;
-	#pragma omp parallel for schedule(dynamic, 9) reduction(+ : tbl[:9])
+	#pragma omp parallel for schedule(guided) reduction(+ : tbl[:9])
 	for (int row = 1; row < size - 1; row++)
 		for (int col = 1; col < size - 1; col++) {
 			tbl[liveNeighbours(row, col)]++;
