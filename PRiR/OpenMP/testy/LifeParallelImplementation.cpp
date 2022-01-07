@@ -206,7 +206,7 @@ void LifeParallelImplementation::oneStep() {
 	{
 		int neighbours;
 		double rnd;
-		#pragma omp for schedule(dynamic)
+		#pragma omp for schedule(dynamic) collapse(2)
 		for (int row = 0; row < size; row++) {
 			for (int col = 0; col < size; col++) {
 				neighbours = liveNeighbours(row, col);
