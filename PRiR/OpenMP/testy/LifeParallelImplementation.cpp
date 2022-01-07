@@ -206,7 +206,7 @@ void LifeParallelImplementation::oneStep() {
 	{
 		int neighbours;
 		double rnd;
-		#pragma omp for schedule(dynamic)
+		#pragma omp for schedule(dynamic) nowait
 		for (int row = 0; row < size; row++) {
 			for (int col = 0; col < size; col++) {
 				neighbours = liveNeighbours(row, col);
@@ -346,7 +346,7 @@ int LifeParallelImplementation::maxSumOfNeighboursAge() {
 	{
 		int sumOfNeighboursAge;
 		// int max_thread_value = 0;
-		#pragma omp for schedule(dynamic) reduction(max : max_value)
+		#pragma omp for schedule(dynamic) reduction(max : max_value) nowait
 		for (int row = 1; row < size - 1; row++) {
 			for (int col = 1; col < size - 1; col++) {
 				sumOfNeighboursAge = neighboursAgeSum(row, col);
