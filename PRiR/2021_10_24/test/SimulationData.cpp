@@ -16,9 +16,9 @@ using namespace std;
 
 SimulationData *getShortSimulationData( void ) {
 	SimulationData *simInfo = createEmptySimulationInfo();
-	simInfo->dataSize = 15;
+	simInfo->dataSize = 300;
 	simInfo->margin = 1;
-	simInfo->repetitions = 2;
+	simInfo->repetitions = 200;
 	simInfo->fileName = "ShortSimulation.txt";
 	return simInfo;
 }
