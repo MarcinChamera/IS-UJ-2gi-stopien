@@ -19,23 +19,25 @@ void MPIDataProcessor::shareData() {
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Status status;
 	if (rank == 0) {
-		int *dataSizeBuffer = new int[1];
-		dataSizeBuffer[0] = dataSize;
+		// int *dataSizeBuffer = new int[1];
+		// dataSizeBuffer[0] = dataSize;
 		for (int i = 1; i < numOfProcesses; i++)
-			MPI_Send(dataSizeBuffer, sizeof(int), MPI_INT, i, 0, MPI_COMM_WORLD);
-		delete[] dataSizeBuffer;
+			MPI_Send(&dataSize, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+		// delete[] dataSizeBuffer;
 	}
 	else {
-		int *dataSizeBuffer = new int[1];
-		MPI_Recv(dataSizeBuffer, sizeof(int), MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-		dataSize = dataSizeBuffer[0];
-		delete[] dataSizeBuffer;
+		// int *dataSizeBuffer = new int[1];
+		MPI_Recv(&dataSize, sizeof(int), MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+		// dataSize = dataSizeBuffer[0];
+		// delete[] dataSizeBuffer;
 	}
 
 	columnsNotLastProcess = (dataSize % numOfProcesses != 0 ? dataSize / numOfProcesses + 1 : dataSize / numOfProcesses);
 	columnsLastProcess = dataSize - (numOfProcesses - 1) * columnsNotLastProcess;
 	int columnsInCurrentProcess = (rank != numOfProcesses - 1 ? columnsNotLastProcess : columnsLastProcess);
 	
+	nextData = tableAlloc(dataSize);
+
 	if (rank == 0) {
 		for (int processNumber = 1; processNumber < numOfProcesses; processNumber++) {
 			int counter = 0;
@@ -50,21 +52,21 @@ void MPIDataProcessor::shareData() {
 			delete[] tablePortionSend;
 		}
 	}
-	if (rank == 0) {
-		nextData = tableAlloc(dataSize);
-		for (int i = 0; i < dataSize; i++) {
-			for (int j = 0; j < dataSize; j++) {
-				nextData[i][j] = data[i][j];
-			}
-		}
-	}
+	// if (rank == 0) {
+		// nextData = tableAlloc(dataSize);
+	// 	for (int i = 0; i < dataSize; i++) {
+	// 		for (int j = 0; j < dataSize; j++) {
+	// 			nextData[i][j] = data[i][j];
+	// 		}
+	// 	}
+	// }
 	else {
 		int columnsToAllocate = rank < numOfProcesses - 1 ? columnsInCurrentProcess + 2 * margin : columnsInCurrentProcess + margin;
 		data = new double* [columnsToAllocate];
-		nextData = new double* [columnsToAllocate];
+		// nextData = new double* [columnsToAllocate];
 		for (int i = 0; i < columnsToAllocate; i++) {
 			data[i] = new double[dataSize];
-			nextData[i] = new double[dataSize];
+			// nextData[i] = new double[dataSize];
 		}
 
 		processTablePortion = new double[columnsInCurrentProcess * dataSize];
@@ -72,7 +74,7 @@ void MPIDataProcessor::shareData() {
 		for (int col = 0; col < columnsInCurrentProcess; col++) {
 			for (int row = 0; row < dataSize; row++) {
 				data[col + margin][row] = processTablePortion[col * dataSize + row];
-				nextData[col + margin][row] = data[col + margin][row];
+				// nextData[col + margin][row] = data[col + margin][row];
 			}
 		}
 
@@ -90,6 +92,12 @@ void MPIDataProcessor::singleExecution() {
 	double *columnsFromNextProcess = new double[margin * dataSize]; 
 	double *columnsForNextProcess = new double[margin * dataSize]; 
 	double *columnsForPreviousProcess = new double[margin * dataSize];
+
+	for (int col = 0; col < columnsInCurrentProcess; col++) {
+		for (int row = 0; row < dataSize; row++) {
+			nextData[col][row] = data[col][row];
+		}
+	}
 
 	if (rank == 0 && numOfProcesses > 1) {
 		int counter = 0;
@@ -187,47 +195,47 @@ void MPIDataProcessor::singleExecution() {
 	}
 	counter = 0;
 	double *dataPortionBuffer = new double[dataPortionSize];
-	double *calculatedDataPortionBuffer = new double[(dataSize - 2 * margin) * columnsInCurrentProcess];
+	// double *calculatedDataPortionBuffer = new double[(dataSize - 2 * margin) * columnsInCurrentProcess];
 	for (int col = margin; col < columnStop; col++) {
 		for (int row = margin; row < dataSize - margin; row++) {
 			createDataPortion(row, col, dataPortionBuffer, rank);
 			double result = function -> calc(dataPortionBuffer);
 			nextData[col][row] = result;
-			if (rank != 0) {
-				calculatedDataPortionBuffer[counter++] = result;
-			}
+			// if (rank != 0) {
+			// 	calculatedDataPortionBuffer[counter++] = result;
+			// }
 		}
 	}
 	
 	delete[] dataPortionBuffer;
-	delete[] calculatedDataPortionBuffer;
+	// delete[] calculatedDataPortionBuffer;
 
-	if (rank != 0) {
-		int sizeToSend = (dataSize - 2 * margin) * (columnStop - margin);
-		MPI_Send(calculatedDataPortionBuffer, sizeToSend, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD);
-	}
-	else if (rank == 0) {
-		int dataFromOtherProcessesSize = (dataSize - 2 * margin) * (dataSize - 2 * margin) - ((dataSize - 2 * margin) * (columnsInCurrentProcess - margin));
-		double *calculatedDataFromOtherProcesses = new double[dataFromOtherProcessesSize];
-		MPI_Status status;
-		int sizeToReceive;
-		double *p = calculatedDataFromOtherProcesses;
-		for (int i = 1; i < numOfProcesses; i++) {
-			sizeToReceive = i != numOfProcesses - 1 ? (dataSize - 2 * margin) * columnsNotLastProcess : (dataSize - 2 * margin) * (columnsLastProcess - margin);
-			if (sizeToReceive > 0) {
-				MPI_Recv(p, sizeToReceive, MPI_DOUBLE, i, i, MPI_COMM_WORLD, &status);
-				if (i < numOfProcesses - 1) {
-					p += sizeToReceive;
-				}
-			}
-		}
-		counter = 0;
-		for (int j = columnsNotLastProcess; j < dataSize - margin; j++)
-			for (int i = margin; i < dataSize - margin; i++) {
-				nextData[j][i] = calculatedDataFromOtherProcesses[counter++];
-		}
-		delete[] calculatedDataFromOtherProcesses;
-	}
+	// if (rank != 0) {
+	// 	int sizeToSend = (dataSize - 2 * margin) * (columnStop - margin);
+	// 	MPI_Send(calculatedDataPortionBuffer, sizeToSend, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD);
+	// }
+	// else if (rank == 0) {
+	// 	int dataFromOtherProcessesSize = (dataSize - 2 * margin) * (dataSize - 2 * margin) - ((dataSize - 2 * margin) * (columnsInCurrentProcess - margin));
+	// 	double *calculatedDataFromOtherProcesses = new double[dataFromOtherProcessesSize];
+	// 	MPI_Status status;
+	// 	int sizeToReceive;
+	// 	double *p = calculatedDataFromOtherProcesses;
+	// 	for (int i = 1; i < numOfProcesses; i++) {
+	// 		sizeToReceive = i != numOfProcesses - 1 ? (dataSize - 2 * margin) * columnsNotLastProcess : (dataSize - 2 * margin) * (columnsLastProcess - margin);
+	// 		if (sizeToReceive > 0) {
+	// 			MPI_Recv(p, sizeToReceive, MPI_DOUBLE, i, i, MPI_COMM_WORLD, &status);
+	// 			if (i < numOfProcesses - 1) {
+	// 				p += sizeToReceive;
+	// 			}
+	// 		}
+	// 	}
+	// 	counter = 0;
+	// 	for (int j = columnsNotLastProcess; j < dataSize - margin; j++)
+	// 		for (int i = margin; i < dataSize - margin; i++) {
+	// 			nextData[j][i] = calculatedDataFromOtherProcesses[counter++];
+	// 	}
+	// 	delete[] calculatedDataFromOtherProcesses;
+	// }
 
 	double **tmp = data;
 	data = nextData;
