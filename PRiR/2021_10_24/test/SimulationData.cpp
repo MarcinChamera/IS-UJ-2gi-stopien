@@ -18,7 +18,7 @@ SimulationData *getShortSimulationData( void ) {
 	SimulationData *simInfo = createEmptySimulationInfo();
 	simInfo->dataSize = 300;
 	simInfo->margin = 1;
-	simInfo->repetitions = 200;
+	simInfo->repetitions = 201;
 	simInfo->fileName = "ShortSimulation.txt";
 	return simInfo;
 }
