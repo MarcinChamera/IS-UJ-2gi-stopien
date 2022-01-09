@@ -97,7 +97,7 @@ void MPIDataProcessor::singleExecution() {
 	// 		nextData[col][row] = data[col][row];
 	// 	}
 	// }
-	if (rank == numOfProcesses - 1) {
+	if (rank == 0) {
 		for (int col = 0; col < columnsInCurrentProcess; col++) {
 			for (int row = 0; row < dataSize; row++) {
 				nextData[col][row] = data[col][row];
