@@ -1,261 +1,245 @@
 /*
- * MPIDataProcessor.cpp
+ * SequentialDataProcessor.cpp
  *
- *  Created on: 19.12.2021
- *      Author: chamera
+ *  Created on: 20 paź 2021
+ *      Author: oramus
  */
 
 #include "MPIDataProcessor.h"
 #include "Alloc.h"
-#include "mpi.h"
-#include <string>
+#include "mpi.h" 
+#include <iomanip>
+#include <iostream>
 
-MPIDataProcessor::MPIDataProcessor() {
-	MPI_Comm_size( MPI_COMM_WORLD, &numOfProcesses );
+using namespace std;
+
+void MPIDataProcessor::processZeroJob(int numberOfProcesses){
+
+	int myDataPortionSize = int(dataSize/numberOfProcesses);
+	int restMyDataPortionSize = dataSize % numberOfProcesses;
+	int a = myDataPortionSize+restMyDataPortionSize;
+	for(int i = 1; i<numberOfProcesses; i++){
+		MPI_Send(&dataSize, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+		MPI_Send(&myDataPortionSize, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+		int stop = a+myDataPortionSize;
+		for(a; a<stop; a++){
+			for(int b = 0; b<dataSize; b++){
+				MPI_Send( &(data[a][b]), 1, MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
+			}
+		}
+		a = stop;
+	}
 }
 
 void MPIDataProcessor::shareData() {
-	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Status status;
-	if (rank == 0) {
-		for (int i = 1; i < numOfProcesses; i++)
-			MPI_Send(&dataSize, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
-	}
-	else {
-		MPI_Recv(&dataSize, sizeof(int), MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-	}
-
-	columnsFirstProcess = int(dataSize / numOfProcesses) + dataSize % numOfProcesses;
-	columnsNotFirstProcess = int(dataSize / numOfProcesses);
 	
-	nextData = tableAlloc(dataSize);
+	int proccessNumber, numberOfProcesses, myDataPortionSize;
+	
+	MPI_Comm_rank( MPI_COMM_WORLD, &proccessNumber );
+	MPI_Comm_size( MPI_COMM_WORLD, &numberOfProcesses );
 
-	if (rank == 0) {
-		for (int processNumber = 1; processNumber < numOfProcesses; processNumber++) {
-			int counter = 0;
-			double *tablePortionSend = new double[columnsNotFirstProcess * dataSize];
-			for (int col = columnsFirstProcess + (processNumber - 1) * columnsNotFirstProcess; col < columnsFirstProcess + processNumber * columnsNotFirstProcess; col++) {
-				for (int row = 0; row < dataSize; row++) {
-					tablePortionSend[counter++] = data[col][row];
-				}
-			}
-			MPI_Send(tablePortionSend, columnsNotFirstProcess * dataSize, MPI_DOUBLE, processNumber, processNumber, MPI_COMM_WORLD);
-			delete[] tablePortionSend;
+	if(proccessNumber == 0)
+	{
+		processZeroJob(numberOfProcesses);
+	}	
+	else{
+
+		MPI_Status status;
+		MPI_Recv(&dataSize, 1, MPI_INT, 0,0, MPI_COMM_WORLD, &status);
+		MPI_Recv(&myDataPortionSize, 1, MPI_INT, 0,0, MPI_COMM_WORLD, &status);
+		
+		data = new double*[dataSize];
+		int allocMemory = 0;
+		if(proccessNumber == numberOfProcesses-1)
+		{
+			allocMemory = myDataPortionSize+margin;
+		}else{
+			allocMemory = myDataPortionSize+2*margin;
 		}
-	}
-	else {
-		int howMuchMargin = rank != numOfProcesses - 1 ? 2 * margin : margin;
-		data = new double* [columnsNotFirstProcess + howMuchMargin];
-		for (int i = 0; i < columnsNotFirstProcess + howMuchMargin; i++) {
+		
+		for(int i=0;i<allocMemory;i++){
 			data[i] = new double[dataSize];
 		}
 
-		double *processTablePortion = new double[columnsNotFirstProcess * dataSize];
-		MPI_Recv(processTablePortion, columnsNotFirstProcess * dataSize, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD, &status);
-		int marginAtTheBeginning = rank != numOfProcesses - 1 ? margin : 0;
-		for (int col = 0; col < columnsNotFirstProcess; col++) {
-			for (int row = 0; row < dataSize; row++) {
-				data[col + marginAtTheBeginning][row] = processTablePortion[col * dataSize + row];
+		for(int a = margin; a<myDataPortionSize+margin; a++){
+			for(int b = 0; b<dataSize; b++){
+				MPI_Recv(&(data[a][b]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status);
 			}
 		}
 
-		delete[] processTablePortion;
-	}	
+	}
+	nextData = tableAlloc(dataSize);
+
 }
 
-void MPIDataProcessor::singleExecution() {
-	MPI_Status status;
-	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	double *columnsFromPreviousProcess = new double[margin * dataSize]; 
-	double *columnsFromNextProcess = new double[margin * dataSize]; 
-	double *columnsForNextProcess = new double[margin * dataSize]; 
-	double *columnsForPreviousProcess = new double[margin * dataSize];
+void MPIDataProcessor::sendData(){
 
-	// for (int col = 0; col < columnsInCurrentProcess; col++) {
-	// 	for (int row = 0; row < dataSize; row++) {
-	// 		nextData[col][row] = data[col][row];
-	// 	}
-	// }
-	if (rank == 0) {
-		for (int col = 0; col < columnsFirstProcess; col++) {
-			for (int row = 0; row < dataSize; row++) {
-				nextData[col][row] = data[col][row];
+	int proccessNumber, numberOfProcesses;
+
+	MPI_Comm_rank( MPI_COMM_WORLD, &proccessNumber );
+	MPI_Comm_size( MPI_COMM_WORLD, &numberOfProcesses );
+
+	int myDataPortionSize = int(dataSize/numberOfProcesses);
+	int restMyDataPortionSize = dataSize % numberOfProcesses;
+
+	if(proccessNumber==0){
+		for(int a = myDataPortionSize+restMyDataPortionSize-margin; a<myDataPortionSize+restMyDataPortionSize; a++){
+			for(int b = 0; b<dataSize; b++){
+				MPI_Send(&(data[a][b]), 1, MPI_DOUBLE, proccessNumber+1, 0, MPI_COMM_WORLD);
 			}
 		}
-	}
-	else {
-		for (int col = margin; col < columnsNotFirstProcess + margin; col++) {
-			for (int row = 0; row < dataSize; row++) {
-				nextData[col][row] = data[col][row];
+	}else{
+		for(int a = margin; a<2*margin; a++){
+			for(int b = 0; b<dataSize; b++){
+				MPI_Send(&(data[a][b]), 1, MPI_DOUBLE, proccessNumber-1, 0, MPI_COMM_WORLD);
 			}
 		}
-	}
-
-	if (rank == 0) {
-		int counter = 0;
-		for (int i = columnsFirstProcess - margin; i < columnsFirstProcess; i++) {
-			for (int j = 0; j < dataSize; j++) {
-				columnsForNextProcess[counter++] = data[i][j];
-			}
-		}
-		MPI_Send(columnsForNextProcess, margin * dataSize, MPI_DOUBLE, rank + 1, rank + 1, MPI_COMM_WORLD);
-
-		MPI_Recv(columnsFromNextProcess, margin * dataSize, MPI_DOUBLE, rank + 1, rank, MPI_COMM_WORLD, &status);
-	}
-	else if (rank != 0 && rank != numOfProcesses - 1) {
-		int counter = 0;
-		for (int i = columnsNotFirstProcess; i < columnsNotFirstProcess + margin; i++) {
-			for (int j = 0; j < dataSize; j++) {
-				columnsForNextProcess[counter++] = data[i][j];
+		if(proccessNumber != numberOfProcesses-1)
+		{
+			for(int a = myDataPortionSize; a<myDataPortionSize+margin; a++){
+				for(int b = 0; b<dataSize; b++){
+					MPI_Send(&(data[a][b]), 1, MPI_DOUBLE, proccessNumber+1, 0, MPI_COMM_WORLD);
+				}
 			}
 		}
 		
-		MPI_Send(columnsForNextProcess, margin * dataSize, MPI_DOUBLE, rank + 1, rank + 1, MPI_COMM_WORLD);
-
-		MPI_Recv(columnsFromNextProcess, margin * dataSize, MPI_DOUBLE, rank + 1, rank, MPI_COMM_WORLD, &status);
-
-		counter = 0;
-		for (int i = margin; i < 2 * margin; i++) {
-			for (int j = 0; j < dataSize; j++) {
-				columnsForPreviousProcess[counter++] = data[i][j];
-			}
-		}
-		MPI_Send(columnsForPreviousProcess, margin * dataSize, MPI_DOUBLE, rank - 1, rank - 1, MPI_COMM_WORLD);
-
-		MPI_Recv(columnsFromPreviousProcess, margin * dataSize, MPI_DOUBLE, rank - 1, rank, MPI_COMM_WORLD, &status);
 	}
-	else {
-		int counter = 0;
-		for (int i = margin; i < 2 * margin; i++) {
-			for (int j = 0; j < dataSize; j++) {
-				columnsForPreviousProcess[counter++] = data[i][j];
+}
+
+void MPIDataProcessor::receiveData(){
+
+	int proccessNumber, numberOfProcesses;
+
+	MPI_Comm_rank( MPI_COMM_WORLD, &proccessNumber );
+	MPI_Comm_size( MPI_COMM_WORLD, &numberOfProcesses );
+
+	int myDataPortionSize = int(dataSize/numberOfProcesses);
+	int restMyDataPortionSize = dataSize % numberOfProcesses;
+	MPI_Status status;
+
+	if(proccessNumber==0){
+		for(int a = myDataPortionSize+restMyDataPortionSize; a<myDataPortionSize+restMyDataPortionSize+margin; a++){
+			for(int b = 0; b<dataSize; b++){
+				MPI_Recv(&(data[a][b]), 1, MPI_DOUBLE, proccessNumber+1, 0, MPI_COMM_WORLD, &status);
 			}
 		}
-		MPI_Send(columnsForPreviousProcess, margin * dataSize, MPI_DOUBLE, rank - 1, rank - 1, MPI_COMM_WORLD);
 
-
-		MPI_Recv(columnsFromPreviousProcess, margin * dataSize, MPI_DOUBLE, rank - 1, rank, MPI_COMM_WORLD, &status);
-	}
-	delete[] columnsForNextProcess;
-	delete[] columnsForPreviousProcess;
-
-	int counter = 0;
-	if (rank > 0 && rank < numOfProcesses - 1) {
-		for (int i = 0; i < margin; i++) {
-			for (int j = 0; j < dataSize; j++) {
-				data[i][j] = columnsFromPreviousProcess[counter++];
+	}else{
+		for(int a = 0; a<margin; a++){
+			for(int b = 0; b<dataSize; b++){
+				MPI_Recv(&(data[a][b]), 1, MPI_DOUBLE, proccessNumber-1, 0, MPI_COMM_WORLD, &status);
 			}
 		}
-		counter = 0;
-		for (int i = columnsNotFirstProcess + margin; i < columnsNotFirstProcess + 2 * margin; i++) {
-			for (int j = 0; j < dataSize; j++) {
-				data[i][j] = columnsFromNextProcess[counter++];
-			}
-		}
-	}
-	else {
-		if (rank == 0) {
-			for (int i = columnsFirstProcess; i < columnsFirstProcess + margin; i++) {
-				for (int j = 0; j < dataSize; j++) {
-					data[i][j] = columnsFromNextProcess[counter++];
+		if(proccessNumber != numberOfProcesses-1)
+		{
+			for(int a = myDataPortionSize+margin; a<myDataPortionSize+margin*2; a++){
+				for(int b = 0; b<dataSize; b++){
+					MPI_Recv(&(data[a][b]), 1, MPI_DOUBLE, proccessNumber+1, 0, MPI_COMM_WORLD, &status);
 				}
 			}
-		}
-		else {
-			for (int i = 0; i < margin; i++) {
-				for (int j = 0; j < dataSize; j++) {
-					data[i][j] = columnsFromPreviousProcess[counter++];
-				}
+		}	
+	}
+
+}
+
+void MPIDataProcessor::singleExecution(){
+
+
+	int proccessNumber, numberOfProcesses;
+
+	MPI_Comm_rank( MPI_COMM_WORLD, &proccessNumber );
+	MPI_Comm_size( MPI_COMM_WORLD, &numberOfProcesses );
+
+	int myDataPortionSize = int(dataSize/numberOfProcesses);
+	int restMyDataPortionSize = dataSize % numberOfProcesses;
+	MPI_Status status;
+		
+	if(proccessNumber==0){
+		for(int a = 0 ; a < myDataPortionSize+restMyDataPortionSize; a++){
+			for(int b = 0; b< dataSize; b++){
+				nextData[a][b] = data[a][b];
 			}
 		}
 	}
-	delete[] columnsFromPreviousProcess;
-	delete[] columnsFromNextProcess;
-
-	int columnStop;
-	// if (rank == 0) {
-	// 	columnStop = columnsFirstProcess;
-	// } else if (rank < numOfProcesses - 1) {
-	// 	columnStop = columnsNotFirstProcess + margin;
-	// }
-	// else {
-	// 	columnStop = columnsNotFirstProcess;
-	// 	if (margin > columnsNotFirstProcess)
-	// 		columnStop = 0;
-	// }
-	if (rank == 0) {
-		columnStop = columnsFirstProcess;
-	}
-	else if (rank > 0 && rank < numOfProcesses - 1) {
-		columnStop = columnsNotFirstProcess + margin;
-	}
-	else {
-		columnStop = columnsNotFirstProcess;
+	else if(proccessNumber == numberOfProcesses-1){
+		for(int a = margin; a < myDataPortionSize+margin; a++){
+			for(int b = 0; b< dataSize; b++){
+				nextData[a][b] = data[a][b];
+			}
+		}
+	}else{
+		for(int a = margin; a < myDataPortionSize+margin; a++){
+			for(int b = 0; b< dataSize; b++){
+				nextData[a][b] = data[a][b];
+			}
+		}
 	}
 
-	// counter = 0;
-	double *dataPortionBuffer = new double[dataPortionSize];
-	// double *calculatedDataPortionBuffer = new double[(dataSize - 2 * margin) * columnsInCurrentProcess];
-	for (int row = margin; row < columnStop; row++) {
+	// dotad wszystko co by bylo wykonane (czyli shareData i powyzszy blok w singleExecution)
+	// zostaly raczej dobrze przeniesione
+
+	int kuTemp =0;
+	if(proccessNumber == 0){
+		kuTemp=myDataPortionSize+restMyDataPortionSize+margin;
+	}else if(numberOfProcesses-1 == proccessNumber){
+		kuTemp = int( dataSize / numberOfProcesses );
+		kuTemp = margin + kuTemp;
+	}else{
+		kuTemp = int( dataSize / numberOfProcesses );
+		kuTemp = margin + kuTemp + margin;
+	}
+	// receive i send data maja taki sam zakres indexow jak moje rozwiazanie - czyli jest git
+	sendData();
+	receiveData();
+	double *buffer = new double[dataPortionSize];
+	
+	for (int row = margin; row < kuTemp-margin; row++){
 		for (int col = margin; col < dataSize - margin; col++) {
-			createDataPortion(row, col, dataPortionBuffer);
-			nextData[row][col] = function -> calc(dataPortionBuffer);
-			// if (rank != 0) {
-			// 	calculatedDataPortionBuffer[counter++] = result;
-			// }
+			createDataPortion(row, col, buffer);
+			nextData[row][col] = function->calc(buffer);
 		}
 	}
 	
-	delete[] dataPortionBuffer;
-	// delete[] calculatedDataPortionBuffer;
-
-	// if (rank != 0) {
-	// 	int sizeToSend = (dataSize - 2 * margin) * (columnStop - margin);
-	// 	MPI_Send(calculatedDataPortionBuffer, sizeToSend, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD);
-	// }
-	// else if (rank == 0) {
-	// 	int dataFromOtherProcessesSize = (dataSize - 2 * margin) * (dataSize - 2 * margin) - ((dataSize - 2 * margin) * (columnsInCurrentProcess - margin));
-	// 	double *calculatedDataFromOtherProcesses = new double[dataFromOtherProcessesSize];
-	// 	MPI_Status status;
-	// 	int sizeToReceive;
-	// 	double *p = calculatedDataFromOtherProcesses;
-	// 	for (int i = 1; i < numOfProcesses; i++) {
-	// 		sizeToReceive = i != numOfProcesses - 1 ? (dataSize - 2 * margin) * columnsNotLastProcess : (dataSize - 2 * margin) * (columnsLastProcess - margin);
-	// 		if (sizeToReceive > 0) {
-	// 			MPI_Recv(p, sizeToReceive, MPI_DOUBLE, i, i, MPI_COMM_WORLD, &status);
-	// 			if (i < numOfProcesses - 1) {
-	// 				p += sizeToReceive;
-	// 			}
-	// 		}
-	// 	}
-	// 	counter = 0;
-	// 	for (int j = columnsNotLastProcess; j < dataSize - margin; j++)
-	// 		for (int i = margin; i < dataSize - margin; i++) {
-	// 			nextData[j][i] = calculatedDataFromOtherProcesses[counter++];
-	// 	}
-	// 	delete[] calculatedDataFromOtherProcesses;
-	// }
-
+	delete[] buffer;
 	double **tmp = data;
 	data = nextData;
 	nextData = tmp;
+
 }
 
-void MPIDataProcessor::createDataPortion(int row, int col, double *buffer) {
-	int counter = 0;
-	for (int i = row - margin; i <= row + margin; i++) {
-		for (int j = col - margin; j <= col + margin; j++) {
-			buffer[counter++] = data[i][j];
+void MPIDataProcessor::collectData(){
+	int proccessNumber, numberOfProcesses;
+
+	MPI_Comm_rank( MPI_COMM_WORLD, &proccessNumber );
+	MPI_Comm_size( MPI_COMM_WORLD, &numberOfProcesses );
+
+	int myDataPortionSize = int(dataSize/numberOfProcesses);
+	int restMyDataPortionSize = dataSize % numberOfProcesses;
+	MPI_Status status;
+
+	if(proccessNumber == 0){
+		for(int i = 1; i<numberOfProcesses; i++){
+			for(int a = i*myDataPortionSize+restMyDataPortionSize;a<i*myDataPortionSize+restMyDataPortionSize+myDataPortionSize;a++){
+				for(int b = 0; b<dataSize; b++){
+					MPI_Recv(&(data[a][b]), 1, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &status);
+				}
+			}
+		}
+	}else{
+		for(int a = margin; a<myDataPortionSize+margin;a++){
+			for(int b = 0; b<dataSize; b++){
+				MPI_Send(&(data[a][b]), 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+			}
 		}
 	}
 }
 
-double **MPIDataProcessor::tablePortionAlloc( int rows, int cols ) {
-	double **result;
-	result = new double* [ rows ]; 
-	for ( int i = 0; i < rows; i++ )
-		result[ i ] = new double[ cols ]; 
-	return result;
+
+
+void MPIDataProcessor::createDataPortion(int row, int col,
+		double *buffer) {
+	int counter = 0;
+	for (int i = row - margin; i <= row + margin; i++)
+		for (int j = col - margin; j <= col + margin; j++)
+			buffer[counter++] = data[i][j];
 }
