@@ -53,7 +53,6 @@ void MPIDataProcessor::shareData() {
 
 		double *processTablePortion = new double[columnsNotFirstProcess * dataSize];
 		MPI_Recv(processTablePortion, columnsNotFirstProcess * dataSize, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD, &status);
-		// tutaj moze byc potencjalnie cos nie tak (zakres iteracji i indexy data)
 		int marginAtTheBeginning = rank != numOfProcesses - 1 ? margin : 0;
 		for (int col = 0; col < columnsNotFirstProcess; col++) {
 			for (int row = 0; row < dataSize; row++) {
@@ -176,19 +175,27 @@ void MPIDataProcessor::singleExecution() {
 	delete[] columnsFromNextProcess;
 
 	int columnStop;
+	// if (rank == 0) {
+	// 	columnStop = columnsFirstProcess;
+	// } else if (rank < numOfProcesses - 1) {
+	// 	columnStop = columnsNotFirstProcess + margin;
+	// }
+	// else {
+	// 	columnStop = columnsNotFirstProcess;
+	// 	if (margin > columnsNotFirstProcess)
+	// 		columnStop = 0;
+	// }
 	if (rank == 0) {
 		columnStop = columnsFirstProcess;
-	} else if (rank < numOfProcesses - 1) {
+	}
+	else if (rank > 0 && rank < numOfProcesses - 1) {
 		columnStop = columnsNotFirstProcess + margin;
-		// if (rank == numOfProcesses - 2 && margin > columnsLastProcess)
-		// 	columnStop = columnsInCurrentProcess + margin - (margin - columnsLastProcess);
 	}
 	else {
 		columnStop = columnsNotFirstProcess;
-		if (margin > columnsNotFirstProcess)
-			columnStop = 0;
 	}
-	counter = 0;
+
+	// counter = 0;
 	double *dataPortionBuffer = new double[dataPortionSize];
 	// double *calculatedDataPortionBuffer = new double[(dataSize - 2 * margin) * columnsInCurrentProcess];
 	for (int col = margin; col < columnStop; col++) {
