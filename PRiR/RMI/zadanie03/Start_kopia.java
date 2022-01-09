@@ -22,7 +22,7 @@ public class Start {
             private HashMap<String, ArrayList<Position2D>> polygonalChains;
             private SynchronousQueue<PolygonalChainWithName> queue;
             private ArrayList<String> readyPolygonalChainsNames;
-            private HashMap<String, Future<Integer>> sentPolygonalChains;
+            private HashMap<String, Integer> processedPolygonalChains;
         
             protected ImplPolygonalChain() throws RemoteException {
                 super();
@@ -30,7 +30,7 @@ public class Start {
                 orderedLineSegments = new HashMap<String, ArrayList<LineSegment>>();
                 polygonalChains = new HashMap<String, ArrayList<Position2D>>();
                 queue = new SynchronousQueue<PolygonalChainWithName>();
-                sentPolygonalChains = new HashMap<String, Future<Integer>>();
+                processedPolygonalChains = new HashMap<String, Integer>();
                 readyPolygonalChainsNames = new ArrayList<String>();
             }
         
@@ -93,72 +93,9 @@ public class Start {
             @Override
             public synchronized void addLineSegment(String name, Position2D firstPoint, Position2D lastPoint) throws RemoteException {
                 receivedLineSegments.get(name).add(0, new LineSegment(firstPoint, lastPoint));
-                Runnable runnable1 = () -> {
-                    updateOrderedLineSegments(name);
-                };
-                Runnable runnable2 = () -> {
-                    checkIfOrderedLineSegmentsReady(name);
-                };
-                new Thread(runnable1).start();
-                new Thread(runnable2).start();
+                updateOrderedLineSegments(name);
+                checkIfOrderedLineSegmentsReady(name);
             }
-        
-            // private synchronized void updateOrderedLineSegments(String name) {
-            //     ArrayList<LineSegment> receivedLineSegments = this.receivedLineSegments.get(name);
-            //     ArrayList<LineSegment> orderedLineSegments = this.orderedLineSegments.get(name);
-            //     ArrayList<Position2D> polygonalChain = this.polygonalChains.get(name);
-            //     boolean search = true;
-            //     while (search) {
-            //         search = false;
-            //         for (int i = 0; i < receivedLineSegments.size(); i++) {
-            //             for (int j = 0; j < orderedLineSegments.size(); j++) {
-            //                 if (receivedLineSegments.get(i).firstPoint.equals(orderedLineSegments.get(j).lastPoint) &&
-            //                     !orderedLineSegments.contains(receivedLineSegments.get(i))) {
-            //                     orderedLineSegments.add(j + 1, receivedLineSegments.get(i));
-            //                     polygonalChain.add(j + 1, receivedLineSegments.get(i).lastPoint);
-            //                     search = true;
-            //                 }
-            //                 if (receivedLineSegments.get(i).lastPoint.equals(orderedLineSegments.get(j).firstPoint) &&
-            //                     !orderedLineSegments.contains(receivedLineSegments.get(i))) {
-            //                     orderedLineSegments.add(j, receivedLineSegments.get(i));
-            //                     polygonalChain.add(j, receivedLineSegments.get(i).firstPoint);
-            //                     search = true;
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
-        
-            // private boolean checkIfReady(String name) {
-            //     ArrayList<LineSegment> orderedLineSegments = this.orderedLineSegments.get(name);
-            //     for (int i = 1; i < orderedLineSegments.size(); i++) {
-            //         if (!orderedLineSegments.get(i).firstPoint.equals(orderedLineSegments.get(i - 1).lastPoint)) {
-            //             return false;
-            //         }
-            //     }
-            //     return true;
-            // }
-        
-            // private synchronized void checkIfOrderedLineSegmentsReady(String name) {
-            //     if (!readyPolygonalChainsNames.contains(name) && checkIfReady(name)) {
-            //         try {
-            //             readyPolygonalChainsNames.add(name);
-            //             LinkedHashSet<Position2D> set = new LinkedHashSet<Position2D>(polygonalChains.get(name));
-            //             polygonalChains.get(name).clear();
-            //             polygonalChains.get(name).addAll(set);
-            //             queue.put(new PolygonalChainWithName(name, new ArrayList<Position2D>(polygonalChains.get(name))));
-            //         } catch (InterruptedException e) {
-            //             e.printStackTrace();
-            //         }
-            //     }
-            // }
-
-            // @Override
-            // public synchronized void addLineSegment(String name, Position2D firstPoint, Position2D lastPoint) throws RemoteException {
-            //     receivedLineSegments.get(name).add(0, new LineSegment(firstPoint, lastPoint));
-            //     updateOrderedLineSegments(name);
-            //     checkIfOrderedLineSegmentsReady(name);
-            // }
         
             private void updateOrderedLineSegments(String name) {
                 boolean search = true;
@@ -193,7 +130,7 @@ public class Start {
             }
         
             private void checkIfOrderedLineSegmentsReady(String name) {
-                if (checkIfReady(name)) {
+                if (!readyPolygonalChainsNames.contains(name) && checkIfReady(name)) {
                     try {
                         readyPolygonalChainsNames.add(name);
                         LinkedHashSet<Position2D> set = new LinkedHashSet<Position2D>(polygonalChains.get(name));
@@ -208,16 +145,8 @@ public class Start {
         
             @Override
             public synchronized Integer getResult(String name) throws RemoteException {
-                if (sentPolygonalChains.get(name).isDone()) {
-                    try {
-                        return sentPolygonalChains.get(name).get();
-                    } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    } catch (ExecutionException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
+                if (processedPolygonalChains.get(name) != null) {
+                    return processedPolygonalChains.get(name);
                 }
                 return null;
             }
@@ -235,23 +164,66 @@ public class Start {
                 return queue.take();
             }
             
-            protected void addSentPolygonalChain(String name, Future<Integer> sentPolygonalChain) {
-                this.sentPolygonalChains.put(name, sentPolygonalChain);
+            protected void addProcessedPolygonalChain(String name, Integer result) {
+                processedPolygonalChains.put(name, result);
             }
+        }
+
+        class PolygonalChainChecker {
+            public void checkIfAnyPolygonalChainProcessed(ArrayList<NameWithFuture> results, ImplPolygonalChain implPolygonalChain) {
+                ArrayList<Integer> indicesOfProcessedPolygonalChains = new ArrayList<Integer>();
+                for (int i = 0; i < results.size(); i++) {
+                    if (results.get(i).getFuture().isDone()) {
+                        try {
+                            implPolygonalChain.addProcessedPolygonalChain(results.get(i).getName(), results.get(i).getFuture().get());
+                            indicesOfProcessedPolygonalChains.add(i);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                for (int i : indicesOfProcessedPolygonalChains) {
+                    results.remove(i);
+                }
+            }
+
+            // public String getPolygonalChainProcessorName() {
+
+            // }
         }
         
         ImplPolygonalChain implPolygonalChain = new ImplPolygonalChain();
         
         namingContext.bind( "rmi:POLYGONAL_CHAIN", implPolygonalChain );
 
+        PolygonalChainChecker polygonalChainProcessorChecker = new PolygonalChainChecker();
+
         String polygonalChainProcessorName = null;
         while(polygonalChainProcessorName == null) {
             polygonalChainProcessorName = implPolygonalChain.getPolygonalChainProcessorName();
+            //odkomentowanie tego zwraca 5/6 zaliczonych, z niezaliczonym concurrentProcessingB()[1] Nie zgadza się liczba wynikow udostępnionych przez PolygonalChain
+            //zakomentowanie zwraca 6/6 niezaliczonych
+            Thread.sleep(1);
         }
         PolygonalChainProcessor polygonalChainProcessor = (PolygonalChainProcessor) Naming.lookup(polygonalChainProcessorName);
 
         int maxPolygonalChains = polygonalChainProcessor.getConcurrentTasksLimit();
         ExecutorService executor = Executors.newFixedThreadPool(maxPolygonalChains);
+
+        ArrayList<NameWithFuture> results = new ArrayList<NameWithFuture>();
+        Runnable runnable = () -> {
+            while(true) {
+                polygonalChainProcessorChecker.checkIfAnyPolygonalChainProcessed(results, implPolygonalChain);
+                // try {
+                //     Thread.sleep(1);
+                // } catch (InterruptedException e) {
+                //     e.printStackTrace();
+                // }
+            }
+        };  
+        new Thread(runnable).start();
 
         while (true) {
             final ImplPolygonalChain.PolygonalChainWithName polygonalChainWithName = implPolygonalChain.getFromQueue();
@@ -259,8 +231,27 @@ public class Start {
                 Callable<Integer> callableSend = () -> {
                     return polygonalChainProcessor.process(polygonalChainWithName.getName(), polygonalChainWithName.getPolygonalChain());
                 };
-                implPolygonalChain.addSentPolygonalChain(polygonalChainWithName.getName(), executor.submit(callableSend));
+                Future<Integer> result = executor.submit(callableSend);
+                results.add(new NameWithFuture(polygonalChainWithName.getName(), result));
             }
+        }
+    }
+    
+    private class NameWithFuture {
+        private String name;
+        private Future<Integer> future;
+
+        NameWithFuture(String name, Future<Integer> future) {
+            this.name = name;
+            this.future = future;
+        }
+
+        protected String getName() {
+            return name;
+        }
+
+        protected Future<Integer> getFuture() {
+            return future;
         }
     }
 }
