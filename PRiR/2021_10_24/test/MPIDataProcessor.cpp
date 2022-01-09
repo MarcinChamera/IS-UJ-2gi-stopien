@@ -201,7 +201,7 @@ void MPIDataProcessor::singleExecution() {
 	for (int row = margin; row < columnStop; row++) {
 		for (int col = margin; col < dataSize - margin; col++) {
 			createDataPortion(row, col, dataPortionBuffer);
-			nextData[col][row] = function -> calc(dataPortionBuffer);
+			nextData[row][col] = function -> calc(dataPortionBuffer);
 			// if (rank != 0) {
 			// 	calculatedDataPortionBuffer[counter++] = result;
 			// }
