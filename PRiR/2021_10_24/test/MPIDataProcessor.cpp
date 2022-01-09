@@ -32,8 +32,8 @@ void MPIDataProcessor::shareData() {
 		// delete[] dataSizeBuffer;
 	}
 
-	columnsNotLastProcess = (dataSize % numOfProcesses != 0 ? dataSize / numOfProcesses + 1 : dataSize / numOfProcesses);
-	columnsLastProcess = dataSize - (numOfProcesses - 1) * columnsNotLastProcess;
+	columnsNotLastProcess = int(dataSize / numOfProcesses);
+	columnsLastProcess = int(dataSize / numOfProcesses) + dataSize % numOfProcesses;
 	int columnsInCurrentProcess = (rank != numOfProcesses - 1 ? columnsNotLastProcess : columnsLastProcess);
 	
 	nextData = tableAlloc(dataSize);
@@ -185,8 +185,8 @@ void MPIDataProcessor::singleExecution() {
 		columnStop = columnsInCurrentProcess;
 	} else if (rank < numOfProcesses - 1) {
 		columnStop = columnsInCurrentProcess + margin;
-		if (rank == numOfProcesses - 2 && margin > columnsLastProcess)
-			columnStop = columnsInCurrentProcess + margin - (margin - columnsLastProcess);
+		// if (rank == numOfProcesses - 2 && margin > columnsLastProcess)
+		// 	columnStop = columnsInCurrentProcess + margin - (margin - columnsLastProcess);
 	}
 	else {
 		columnStop = columnsLastProcess;
