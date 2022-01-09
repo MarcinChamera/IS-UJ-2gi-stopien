@@ -69,7 +69,7 @@ void MPIDataProcessor::shareData() {
 			// nextData[i] = new double[dataSize];
 		}
 
-		processTablePortion = new double[columnsInCurrentProcess * dataSize];
+		double *processTablePortion = new double[columnsInCurrentProcess * dataSize];
 		MPI_Recv(processTablePortion, columnsInCurrentProcess * dataSize, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD, &status);
 		for (int col = 0; col < columnsInCurrentProcess; col++) {
 			for (int row = 0; row < dataSize; row++) {
@@ -97,7 +97,7 @@ void MPIDataProcessor::singleExecution() {
 	// 		nextData[col][row] = data[col][row];
 	// 	}
 	// }
-	if (rank == 0) {
+	if (rank == numOfProcesses - 1) {
 		for (int col = 0; col < columnsInCurrentProcess; col++) {
 			for (int row = 0; row < dataSize; row++) {
 				nextData[col][row] = data[col][row];
