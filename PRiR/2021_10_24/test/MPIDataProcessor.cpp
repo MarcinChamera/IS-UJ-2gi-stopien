@@ -200,7 +200,7 @@ void MPIDataProcessor::singleExecution() {
 	// double *calculatedDataPortionBuffer = new double[(dataSize - 2 * margin) * columnsInCurrentProcess];
 	for (int col = margin; col < columnStop; col++) {
 		for (int row = margin; row < dataSize - margin; row++) {
-			createDataPortion(row, col, dataPortionBuffer, rank);
+			createDataPortion(row, col, dataPortionBuffer);
 			double result = function -> calc(dataPortionBuffer);
 			nextData[col][row] = result;
 			// if (rank != 0) {
@@ -244,11 +244,11 @@ void MPIDataProcessor::singleExecution() {
 	nextData = tmp;
 }
 
-void MPIDataProcessor::createDataPortion(int row, int col, double *buffer, int rank) {
+void MPIDataProcessor::createDataPortion(int row, int col, double *buffer) {
 	int counter = 0;
-	for (int j = col - margin; j <= col + margin; j++) {
-		for (int i = row - margin; i <= row + margin; i++) {
-			buffer[counter++] = data[j][i];
+	for (int j = row - margin; j <= row + margin; j++) {
+		for (int i = col - margin; i <= col + margin; i++) {
+			buffer[counter++] = data[i][j];
 		}
 	}
 }
