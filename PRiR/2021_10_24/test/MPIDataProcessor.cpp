@@ -198,11 +198,10 @@ void MPIDataProcessor::singleExecution() {
 	// counter = 0;
 	double *dataPortionBuffer = new double[dataPortionSize];
 	// double *calculatedDataPortionBuffer = new double[(dataSize - 2 * margin) * columnsInCurrentProcess];
-	for (int col = margin; col < columnStop; col++) {
-		for (int row = margin; row < dataSize - margin; row++) {
+	for (int row = margin; row < columnStop; row++) {
+		for (int col = margin; col < dataSize - margin; col++) {
 			createDataPortion(row, col, dataPortionBuffer);
-			double result = function -> calc(dataPortionBuffer);
-			nextData[col][row] = result;
+			nextData[col][row] = function -> calc(dataPortionBuffer);
 			// if (rank != 0) {
 			// 	calculatedDataPortionBuffer[counter++] = result;
 			// }
