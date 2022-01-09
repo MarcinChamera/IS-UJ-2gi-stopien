@@ -15,8 +15,8 @@ private:
 	void createDataPortion( int row, int col, double *buffer, int rank);
 	double **tablePortionAlloc(int rows, int cols);
 	int numOfProcesses;
-	int columnsNotLastProcess;
-	int columnsLastProcess;
+	int columnsFirstProcess;
+	int columnsNotFirstProcess;
 protected:
 	void singleExecution();
 	void collectData() {}

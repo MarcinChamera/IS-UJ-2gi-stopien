@@ -32,23 +32,21 @@ void MPIDataProcessor::shareData() {
 		// delete[] dataSizeBuffer;
 	}
 
-	columnsNotLastProcess = int(dataSize / numOfProcesses);
-	columnsLastProcess = int(dataSize / numOfProcesses) + dataSize % numOfProcesses;
-	int columnsInCurrentProcess = (rank != numOfProcesses - 1 ? columnsNotLastProcess : columnsLastProcess);
+	columnsFirstProcess = int(dataSize / numOfProcesses) + dataSize % numOfProcesses;
+	columnsNotFirstProcess = int(dataSize / numOfProcesses);
 	
 	nextData = tableAlloc(dataSize);
 
 	if (rank == 0) {
 		for (int processNumber = 1; processNumber < numOfProcesses; processNumber++) {
 			int counter = 0;
-			int columnsInReceivingProcess = processNumber != numOfProcesses - 1 ? columnsNotLastProcess : columnsLastProcess;
-			double *tablePortionSend = new double[columnsInReceivingProcess * dataSize];
-			for (int col = processNumber * columnsNotLastProcess; col < processNumber * columnsNotLastProcess + columnsInReceivingProcess; col++) {
+			double *tablePortionSend = new double[columnsNotFirstProcess * dataSize];
+			for (int col = columnsFirstProcess + (processNumber - 1) * columnsNotFirstProcess; col < columnsFirstProcess + processNumber * columnsNotFirstProcess; col++) {
 				for (int row = 0; row < dataSize; row++) {
 					tablePortionSend[counter++] = data[col][row];
 				}
 			}
-			MPI_Send(tablePortionSend, columnsInReceivingProcess * dataSize, MPI_DOUBLE, processNumber, processNumber, MPI_COMM_WORLD);
+			MPI_Send(tablePortionSend, columnsNotFirstProcess * dataSize, MPI_DOUBLE, processNumber, processNumber, MPI_COMM_WORLD);
 			delete[] tablePortionSend;
 		}
 	}
@@ -61,17 +59,17 @@ void MPIDataProcessor::shareData() {
 	// 	}
 	// }
 	else {
-		int columnsToAllocate = rank < numOfProcesses - 1 ? columnsInCurrentProcess + 2 * margin : columnsInCurrentProcess + margin;
-		data = new double* [columnsToAllocate];
+		data = new double* [columnsNotFirstProcess];
 		// nextData = new double* [columnsToAllocate];
-		for (int i = 0; i < columnsToAllocate; i++) {
+		for (int i = 0; i < columnsNotFirstProcess; i++) {
 			data[i] = new double[dataSize];
 			// nextData[i] = new double[dataSize];
 		}
 
-		double *processTablePortion = new double[columnsInCurrentProcess * dataSize];
-		MPI_Recv(processTablePortion, columnsInCurrentProcess * dataSize, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD, &status);
-		for (int col = 0; col < columnsInCurrentProcess; col++) {
+		double *processTablePortion = new double[columnsNotFirstProcess * dataSize];
+		MPI_Recv(processTablePortion, columnsNotFirstProcess * dataSize, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD, &status);
+		// tutaj moze byc potencjalnie cos nie tak (zakres iteracji i indexy data)
+		for (int col = 0; col < columnsNotFirstProcess; col++) {
 			for (int row = 0; row < dataSize; row++) {
 				data[col + margin][row] = processTablePortion[col * dataSize + row];
 				// nextData[col + margin][row] = data[col + margin][row];
@@ -86,7 +84,6 @@ void MPIDataProcessor::singleExecution() {
 	MPI_Status status;
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	int columnsInCurrentProcess = (rank != numOfProcesses - 1 ? columnsNotLastProcess : columnsLastProcess);
 	double *columnsFromPreviousProcess = new double[margin * dataSize]; 
 	double *columnsFromNextProcess = new double[margin * dataSize]; 
 	double *columnsForNextProcess = new double[margin * dataSize]; 
@@ -98,23 +95,23 @@ void MPIDataProcessor::singleExecution() {
 	// 	}
 	// }
 	if (rank == 0) {
-		for (int col = 0; col < columnsInCurrentProcess; col++) {
+		for (int col = 0; col < columnsFirstProcess; col++) {
 			for (int row = 0; row < dataSize; row++) {
 				nextData[col][row] = data[col][row];
 			}
 		}
 	}
 	else {
-		for (int col = margin; col < columnsInCurrentProcess + margin; col++) {
+		for (int col = margin; col < columnsNotFirstProcess + margin; col++) {
 			for (int row = 0; row < dataSize; row++) {
 				nextData[col][row] = data[col][row];
 			}
 		}
 	}
 
-	if (rank == 0 && numOfProcesses > 1) {
+	if (rank == 0) {
 		int counter = 0;
-		for (int i = columnsInCurrentProcess - margin; i < columnsInCurrentProcess; i++) {
+		for (int i = columnsFirstProcess - margin; i < columnsFirstProcess; i++) {
 			for (int j = 0; j < dataSize; j++) {
 				columnsForNextProcess[counter++] = data[i][j];
 			}
@@ -125,7 +122,7 @@ void MPIDataProcessor::singleExecution() {
 	}
 	else if (rank != 0 && rank != numOfProcesses - 1) {
 		int counter = 0;
-		for (int i = columnsInCurrentProcess; i < columnsInCurrentProcess + margin; i++) {
+		for (int i = columnsNotFirstProcess; i < columnsNotFirstProcess + margin; i++) {
 			for (int j = 0; j < dataSize; j++) {
 				columnsForNextProcess[counter++] = data[i][j];
 			}
@@ -168,7 +165,7 @@ void MPIDataProcessor::singleExecution() {
 			}
 		}
 		counter = 0;
-		for (int i = columnsInCurrentProcess + margin; i < columnsInCurrentProcess + 2 * margin; i++) {
+		for (int i = columnsNotFirstProcess + margin; i < columnsNotFirstProcess + 2 * margin; i++) {
 			for (int j = 0; j < dataSize; j++) {
 				data[i][j] = columnsFromNextProcess[counter++];
 			}
@@ -176,7 +173,7 @@ void MPIDataProcessor::singleExecution() {
 	}
 	else {
 		if (rank == 0) {
-			for (int i = columnsInCurrentProcess; i < columnsInCurrentProcess + margin; i++) {
+			for (int i = columnsFirstProcess; i < columnsFirstProcess + margin; i++) {
 				for (int j = 0; j < dataSize; j++) {
 					data[i][j] = columnsFromNextProcess[counter++];
 				}
@@ -195,15 +192,15 @@ void MPIDataProcessor::singleExecution() {
 
 	int columnStop;
 	if (rank == 0) {
-		columnStop = columnsInCurrentProcess;
+		columnStop = columnsFirstProcess;
 	} else if (rank < numOfProcesses - 1) {
-		columnStop = columnsInCurrentProcess + margin;
+		columnStop = columnsNotFirstProcess + margin;
 		// if (rank == numOfProcesses - 2 && margin > columnsLastProcess)
 		// 	columnStop = columnsInCurrentProcess + margin - (margin - columnsLastProcess);
 	}
 	else {
-		columnStop = columnsLastProcess;
-		if (margin > columnsLastProcess)
+		columnStop = columnsNotFirstProcess;
+		if (margin > columnsNotFirstProcess)
 			columnStop = 0;
 	}
 	counter = 0;
