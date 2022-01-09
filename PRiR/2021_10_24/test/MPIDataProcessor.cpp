@@ -70,6 +70,26 @@ void MPIDataProcessor::shareData() {
 	}
 	nextData = tableAlloc(dataSize);
 
+	if(proccessNumber==0){
+		for(int a = 0 ; a < myDataPortionSize+restMyDataPortionSize; a++){
+			for(int b = 0; b< dataSize; b++){
+				nextData[a][b] = data[a][b];
+			}
+		}
+	}
+	else if(proccessNumber == numberOfProcesses-1){
+		for(int a = margin; a < myDataPortionSize+margin; a++){
+			for(int b = 0; b< dataSize; b++){
+				nextData[a][b] = data[a][b];
+			}
+		}
+	}else{
+		for(int a = margin; a < myDataPortionSize+margin; a++){
+			for(int b = 0; b< dataSize; b++){
+				nextData[a][b] = data[a][b];
+			}
+		}
+	}
 }
 
 void MPIDataProcessor::sendData(){
@@ -153,27 +173,6 @@ void MPIDataProcessor::singleExecution(){
 	int myDataPortionSize = int(dataSize/numberOfProcesses);
 	int restMyDataPortionSize = dataSize % numberOfProcesses;
 	MPI_Status status;
-		
-	if(proccessNumber==0){
-		for(int a = 0 ; a < myDataPortionSize+restMyDataPortionSize; a++){
-			for(int b = 0; b< dataSize; b++){
-				nextData[a][b] = data[a][b];
-			}
-		}
-	}
-	else if(proccessNumber == numberOfProcesses-1){
-		for(int a = margin; a < myDataPortionSize+margin; a++){
-			for(int b = 0; b< dataSize; b++){
-				nextData[a][b] = data[a][b];
-			}
-		}
-	}else{
-		for(int a = margin; a < myDataPortionSize+margin; a++){
-			for(int b = 0; b< dataSize; b++){
-				nextData[a][b] = data[a][b];
-			}
-		}
-	}
 
 	// dotad wszystko co by bylo wykonane (czyli shareData i powyzszy blok w singleExecution)
 	// zostaly raczej dobrze przeniesione
@@ -205,6 +204,26 @@ void MPIDataProcessor::singleExecution(){
 	data = nextData;
 	nextData = tmp;
 
+		if(proccessNumber==0){
+		for(int a = 0 ; a < myDataPortionSize+restMyDataPortionSize; a++){
+			for(int b = 0; b< dataSize; b++){
+				nextData[a][b] = data[a][b];
+			}
+		}
+	}
+	else if(proccessNumber == numberOfProcesses-1){
+		for(int a = margin; a < myDataPortionSize+margin; a++){
+			for(int b = 0; b< dataSize; b++){
+				nextData[a][b] = data[a][b];
+			}
+		}
+	}else{
+		for(int a = margin; a < myDataPortionSize+margin; a++){
+			for(int b = 0; b< dataSize; b++){
+				nextData[a][b] = data[a][b];
+			}
+		}
+	}
 }
 
 void MPIDataProcessor::collectData(){
