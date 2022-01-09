@@ -71,7 +71,7 @@ void MPIDataProcessor::shareData() {
 	nextData = tableAlloc(dataSize);
 
 	if(proccessNumber==0){
-		for(int a = 0 ; a < myDataPortionSize+restMyDataPortionSize; a++){
+		for(int a = 0 ; a < myDataPortionSize+(dataSize % numberOfProcesses); a++){
 			for(int b = 0; b< dataSize; b++){
 				nextData[a][b] = data[a][b];
 			}
