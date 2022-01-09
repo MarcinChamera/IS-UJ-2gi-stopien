@@ -19,17 +19,11 @@ void MPIDataProcessor::shareData() {
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Status status;
 	if (rank == 0) {
-		// int *dataSizeBuffer = new int[1];
-		// dataSizeBuffer[0] = dataSize;
 		for (int i = 1; i < numOfProcesses; i++)
 			MPI_Send(&dataSize, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
-		// delete[] dataSizeBuffer;
 	}
 	else {
-		// int *dataSizeBuffer = new int[1];
 		MPI_Recv(&dataSize, sizeof(int), MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-		// dataSize = dataSizeBuffer[0];
-		// delete[] dataSizeBuffer;
 	}
 
 	columnsFirstProcess = int(dataSize / numOfProcesses) + dataSize % numOfProcesses;
@@ -50,29 +44,20 @@ void MPIDataProcessor::shareData() {
 			delete[] tablePortionSend;
 		}
 	}
-	// if (rank == 0) {
-		// nextData = tableAlloc(dataSize);
-	// 	for (int i = 0; i < dataSize; i++) {
-	// 		for (int j = 0; j < dataSize; j++) {
-	// 			nextData[i][j] = data[i][j];
-	// 		}
-	// 	}
-	// }
 	else {
-		data = new double* [columnsNotFirstProcess];
-		// nextData = new double* [columnsToAllocate];
-		for (int i = 0; i < columnsNotFirstProcess; i++) {
+		int howMuchMargin = rank != numOfProcesses - 1 ? 2 * margin : margin;
+		data = new double* [columnsNotFirstProcess + howMuchMargin];
+		for (int i = 0; i < columnsNotFirstProcess + howMuchMargin; i++) {
 			data[i] = new double[dataSize];
-			// nextData[i] = new double[dataSize];
 		}
 
 		double *processTablePortion = new double[columnsNotFirstProcess * dataSize];
 		MPI_Recv(processTablePortion, columnsNotFirstProcess * dataSize, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD, &status);
 		// tutaj moze byc potencjalnie cos nie tak (zakres iteracji i indexy data)
+		int marginAtTheBeginning = rank != numOfProcesses - 1 ? margin : 0;
 		for (int col = 0; col < columnsNotFirstProcess; col++) {
 			for (int row = 0; row < dataSize; row++) {
-				data[col + margin][row] = processTablePortion[col * dataSize + row];
-				// nextData[col + margin][row] = data[col + margin][row];
+				data[col + marginAtTheBeginning][row] = processTablePortion[col * dataSize + row];
 			}
 		}
 
