@@ -87,15 +87,28 @@ void MPIDataProcessor::singleExecution() {
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	int columnsInCurrentProcess = (rank != numOfProcesses - 1 ? columnsNotLastProcess : columnsLastProcess);
-	int currentProcessStartingColumn = rank * columnsNotLastProcess;
 	double *columnsFromPreviousProcess = new double[margin * dataSize]; 
 	double *columnsFromNextProcess = new double[margin * dataSize]; 
 	double *columnsForNextProcess = new double[margin * dataSize]; 
 	double *columnsForPreviousProcess = new double[margin * dataSize];
 
-	for (int col = 0; col < columnsInCurrentProcess; col++) {
-		for (int row = 0; row < dataSize; row++) {
-			nextData[col][row] = data[col][row];
+	// for (int col = 0; col < columnsInCurrentProcess; col++) {
+	// 	for (int row = 0; row < dataSize; row++) {
+	// 		nextData[col][row] = data[col][row];
+	// 	}
+	// }
+	if (rank == 0) {
+		for (int col = 0; col < columnsInCurrentProcess; col++) {
+			for (int row = 0; row < dataSize; row++) {
+				nextData[col][row] = data[col][row];
+			}
+		}
+	}
+	else {
+		for (int col = margin; col < columnsInCurrentProcess + margin; col++) {
+			for (int row = 0; row < dataSize; row++) {
+				nextData[col][row] = data[col][row];
+			}
 		}
 	}
 
