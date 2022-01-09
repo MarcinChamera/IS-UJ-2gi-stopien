@@ -1,8 +1,8 @@
 /*
- * MPIDataProcessor.h
+ * SequentialDataProcessor.h
  *
- *  Created on: 19.12.2021
- *      Author: chamera
+ *  Created on: 20 paź 2021
+ *      Author: oramus
  */
 
 #ifndef MPIDATAPROCESSOR_H_
@@ -12,20 +12,19 @@
 
 class MPIDataProcessor : public DataProcessor {
 private:
-	void createDataPortion( int row, int col, double *buffer);
-	double **tablePortionAlloc(int rows, int cols);
-	int numOfProcesses;
-	int columnsFirstProcess;
-	int columnsNotFirstProcess;
+	void createDataPortion( int row, int col, double *buffer );
 protected:
 	void singleExecution();
-	void collectData() {}
+	void collectData();
 	void shareData();
+	void processZeroJob(int numberOfProcesses);
+	void calculate();
+	void sendData();
+	void receiveData();
 public:
-	MPIDataProcessor();
 	double** getResult() {
 		return data;
 	}
 };
 
-#endif /* MPIDATAPROCESSOR_H_ */
+#endif /* SEQUENTIALDATAPROCESSOR_H_ */
