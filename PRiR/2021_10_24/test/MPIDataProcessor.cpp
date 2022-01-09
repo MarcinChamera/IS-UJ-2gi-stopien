@@ -246,8 +246,8 @@ void MPIDataProcessor::singleExecution() {
 
 void MPIDataProcessor::createDataPortion(int row, int col, double *buffer) {
 	int counter = 0;
-	for (int j = row - margin; j <= row + margin; j++) {
-		for (int i = col - margin; i <= col + margin; i++) {
+	for (int i = row - margin; i <= row + margin; i++) {
+		for (int j = col - margin; j <= col + margin; j++) {
 			buffer[counter++] = data[i][j];
 		}
 	}
