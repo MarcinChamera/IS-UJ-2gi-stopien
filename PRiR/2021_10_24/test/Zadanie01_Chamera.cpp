@@ -25,7 +25,7 @@ void MPIDataProcessor::shareData() {
 	else {
 		MPI_Recv(&dataSize, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
 	}
-
+	
 	columnsFirstProcess = int(dataSize / numOfProcesses) + dataSize % numOfProcesses;
 	columnsNotFirstProcess = int(dataSize / numOfProcesses);
 	
