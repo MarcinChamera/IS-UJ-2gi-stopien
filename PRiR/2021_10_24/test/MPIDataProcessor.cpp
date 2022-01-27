@@ -162,8 +162,8 @@ void MPIDataProcessor::collectData() {
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	if (rank == 0) {
 		for (int processNumber = 1; processNumber < numOfProcesses; processNumber++) {
-			for (int i = processNumber * columnsNotFirstProcess + (columnsFirstProcess - columnsNotFirstProcess); i < processNumber * columnsNotFirstProcess + columnsFirstProcess; i++ ) {
-			// for (int i = columnsFirstProcess + (processNumber - 1) * columnsNotFirstProcess; i < processNumber * columnsNotFirstProcess + columnsFirstProcess; i++ ) {
+			// for (int i = processNumber * columnsNotFirstProcess + (columnsFirstProcess - columnsNotFirstProcess); i < processNumber * columnsNotFirstProcess + columnsFirstProcess; i++ ) {
+			for (int i = columnsFirstProcess + (processNumber - 1) * columnsNotFirstProcess; i < processNumber * columnsNotFirstProcess + columnsFirstProcess; i++ ) {
 				for (int j = 0; j < dataSize; j++) {
 					MPI_Recv(&(data[i][j]), 1, MPI_DOUBLE, processNumber, 0, MPI_COMM_WORLD, &status);
 				}
