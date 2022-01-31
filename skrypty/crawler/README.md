@@ -1,4 +1,4 @@
-##AMAZON CRAWLER
+## AMAZON CRAWLER
 
 In order to run the crawler without specifying a search, run: 
 ruby amazon_crawler.rb
