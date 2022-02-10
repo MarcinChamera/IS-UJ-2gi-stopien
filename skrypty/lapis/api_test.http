@@ -1,0 +1,37 @@
+GET http://127.0.0.1:8080/categories/shoes HTTP/1.1
+
+###
+
+GET http://127.0.0.1:8080/categories HTTP/1.1
+
+###
+
+POST http://127.0.0.1:8080/categories/shirts HTTP/1.1
+
+###
+
+PUT http://127.0.0.1:8080/categories/socks/gloves HTTP/1.1
+
+###
+
+DELETE http://127.0.0.1:8080/categories/11 HTTP/1.1
+
+###
+
+GET http://127.0.0.1:8080/products HTTP/1.1
+
+###
+
+GET http://127.0.0.1:8080/products/2 HTTP/1.1
+
+###
+
+POST http://127.0.0.1:8080/products/nike-running-shoes/1 HTTP/1.1
+
+###
+
+PUT http://127.0.0.1:8080/products/2/asics-running-shoes HTTP/1.1
+
+###
+
+DELETE http://127.0.0.1:8080/products/6 HTTP/1.1
