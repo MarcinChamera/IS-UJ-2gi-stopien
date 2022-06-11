@@ -1,6 +1,6 @@
 # Platforma blogowa
 
-W dzisiejszych czasach idea platformy blogowej jest znana większości użytkowników internetu. Jest to elastyczne rozwiązanie, które potrafi przekazywać informacje na temat wielu tematów takich jak marketing, sprzedaż czy oferowane usługi danego biznesu.   
+W dzisiejszych czasach idea platformy blogowej jest znana większości użytkownikom internetu. Jest to elastyczne rozwiązanie, które potrafi przekazywać informacje na temat wielu tematów takich jak marketing, sprzedaż czy oferowane usługi danego biznesu.   
 
 ---
 
