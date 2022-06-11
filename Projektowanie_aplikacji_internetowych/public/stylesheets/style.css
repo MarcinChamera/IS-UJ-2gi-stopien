@@ -1,0 +1,16 @@
+.navbarUl {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #333;
+  display: inline;
+}
+
+ul {
+  list-style-type: none;
+}
+
+.article {
+  background-color: blanchedalmond;
+}

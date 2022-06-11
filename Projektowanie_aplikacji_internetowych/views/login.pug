@@ -1,0 +1,14 @@
+extends layout 
+
+block content 
+    form(action='/login' method='post' novalidate)
+        h1 Login
+        input(type='email' id='email', name='email', placeholder='name@example.com')
+        label(for='email') Email address
+        br
+        input(type='password' id='password', name='password', placeholder='Password')
+        label(for='password') Password
+        if (typeof conflictError != "undefined" && conflictError)
+            div #{conflictError}
+        br
+        button(type='submit') Login

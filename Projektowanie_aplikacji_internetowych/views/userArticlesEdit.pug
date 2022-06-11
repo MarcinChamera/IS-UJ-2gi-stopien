@@ -1,0 +1,16 @@
+extends layout
+
+block content 
+    h1 headerTitle
+    form(action='/userArticles/edit/' + article.ArticleID method='post')
+        label(for='title') Title
+        br
+        textarea(name='title' id='title') #{article.Header}
+        br
+        label(for='Content') Content
+        br
+        textarea(name='content' id='content') #{article.Content}
+        br
+        button(type='submit') Save
+    form(action='/userArticles' method='get' id='userArticles')
+        button Cancel

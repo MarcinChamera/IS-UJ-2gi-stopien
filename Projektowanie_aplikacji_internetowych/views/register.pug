@@ -1,0 +1,25 @@
+extends layout 
+
+block content 
+    form(action='/register' method='post' novalidate)
+        h1 Register
+        input(type='email' id='email', name='email', placeholder='name@example.com')
+        label(for='email') Email address
+        if (typeof validationErrors != "undefined" && validationErrors.email)
+            div #{validationErrors.email.msg}
+        if (typeof conflictError != "undefined" && conflictError)
+            div #{conflictError}
+        br
+        input(type='password' id='password', name='password', placeholder='Password')
+        label(for='password') Password
+        if (typeof validationErrors != "undefined" && validationErrors.password)
+            div #{validationErrors.password.msg}
+        br
+        input(type='password' id='passwordConfirm', name='passwordConfirm', placeholder='Password')
+        label(for='passwordConfirm') Confirm Password
+        if (typeof validationErrors != "undefined" && validationErrors.passwordConfirm)
+            div #{validationErrors.passwordConfirm.msg}
+        br 
+        button(type='submit') Register
+        br
+        a(href='/login') Do you already have an account?

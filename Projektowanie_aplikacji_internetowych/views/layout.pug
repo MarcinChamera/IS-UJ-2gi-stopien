@@ -1,0 +1,26 @@
+doctype html
+html
+  head
+    title= 'Blog App'
+    style
+      include ../public/stylesheets/style.css
+  body
+    block navbar
+      ul(class='navbarUl')
+        if (typeof userEmail != "undefined" && userEmail)
+          li(class='navbarLi') Welcome #{userEmail}
+        li(class='navbarLi')
+          a(href='/' class='navbarLiA') Explore articles
+        if (typeof userEmail != "undefined" && userEmail)
+          li(class='navbarLi')
+            a(href='/userArticles' class='navbarLiA') My articles 
+          li(class='navbarLi')
+            form(action='/logout' method='post' id='logout')
+              button Logout
+        else
+          li(class='navbarLi')
+            a(href='/register' class='navbarLiA') Register
+          li(class='navbarLi')
+            a(href='/login' class='navbarLiA') Login  
+    br
+    block content

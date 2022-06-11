@@ -1,0 +1,19 @@
+extends layout
+
+block content 
+    h1 My articles
+    form(action='/userArticles/new' method='get' id='userArticlesNew')
+        button Add new article
+    if (typeof conflictError != "undefined" && conflictError)
+        p No articles found
+    else 
+        ul
+            each item in articles.rows 
+                li 
+                    div(class='article')
+                        h3 #{item.Header}
+                        p #{item.Content}
+                        a(href='/userArticles/edit/' + item.ArticleID)
+                            button Edit
+                        form(action='/userArticles/'+item.ArticleID+'?_method=DELETE' method='post' id='userArticleDelete')
+                            button Delete

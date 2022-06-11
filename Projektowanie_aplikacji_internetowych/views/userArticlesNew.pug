@@ -1,0 +1,16 @@
+extends layout
+
+block content 
+    h1 headerTitle
+    form(action='/userArticles/new' method='post')
+        label(for='title') Title
+        br
+        textarea(name='title' id='title')
+        br
+        label(for='Content') Content
+        br
+        textarea(name='content' id='content')
+        br
+        button(type='submit') Save
+    form(action='/userArticles' method='get' id='userArticles')
+        button Cancel

@@ -1,0 +1,14 @@
+extends layout 
+
+block content 
+    h1 Explore articles
+    if (typeof conflictError != "undefined" && conflictError)
+        p No articles found
+    else 
+        ul 
+            each item in articles.rows 
+                li 
+                    div(class='article')
+                        h3 #{item.Header}
+                        p #{item.Content}
+                        p Author: #{item.Email}
